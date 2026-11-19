@@ -1,8 +1,570 @@
-@import "tailwindcss";
+/* Import Tailwind base layer styles for standard HTML resets */
+@tailwind base;
 
-/* Base custom font and utility smoothing */
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+/* Import Tailwind component layer styles */
+@tailwind components;
+
+/* Import Tailwind utility classes for responsive and interactive styles */
+@tailwind utilities;
+
+/* Define global custom styles and transitions */
+@layer base {
+  /* Centralized Display Density CSS variables (Comfortable Mode default) */
+  :root,
+  :root[data-density="comfortable"] {
+    --density-card-pad: 1.25rem;
+    --density-section-gap: 1.5rem;
+    --density-grid-gap: 1.25rem;
+    --density-table-py: 0.75rem;
+    --density-table-px: 1rem;
+  }
+
+  /* Compact Mode density tokens for high-volume recruiting workflows */
+  :root[data-density="compact"] {
+    --density-card-pad: 0.875rem;
+    --density-section-gap: 1rem;
+    --density-grid-gap: 0.75rem;
+    --density-table-py: 0.45rem;
+    --density-table-px: 0.75rem;
+  }
+
+  /* Set smooth scroll behavior on root element */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Support dark background on root html and body when dark mode is active */
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* Crisp optical Inter glyphs and balanced display headings across workspace */
+  body {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      font-size: 16px;
+    }
+  }
+
+  h1, h2, h3 {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.015em;
+  }
+
+  /* Centralized base heading and control scales (responsive, no !important) */
+  h1 {
+    font-size: clamp(1.75rem, 2vw, 2rem); /* 28px - 32px */
+    line-height: 1.22;
+  }
+
+  h2 {
+    font-size: clamp(1.375rem, 1.5vw, 1.5rem); /* 22px - 24px */
+    line-height: 1.28;
+  }
+
+  h3 {
+    font-size: clamp(1.125rem, 1.25vw, 1.25rem); /* 18px - 20px */
+    line-height: 1.35;
+  }
+
+  label {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.45;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 1rem; /* 16px */
+    line-height: 1.5;
+  }
+
+  select {
+    border-radius: 0.75rem;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    cursor: pointer;
+  }
+
+  select:hover {
+    border-color: #6ee7b7;
+  }
+
+  select:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+  }
+
+  option {
+    font-size: 0.9375rem; /* 15px */
+    padding: 0.5rem 0.75rem;
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  .dark option {
+    background-color: #0a0a0a;
+    color: #f4f4f5;
+  }
+
+  table th {
+    font-size: 0.90625rem; /* 14.5px */
+    line-height: 1.4;
+  }
+
+  table td {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.5;
+  }
+
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible keyboard focus indicator across interactive controls */
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid rgba(16, 185, 129, 0.55);
+    outline-offset: 2px;
+  }
+
+  /* Style custom subtle scrollbars for sleek SaaS aesthetic */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Style scrollbar track with transparent neutral color */
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Style scrollbar thumb handle with light slate color */
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+
+  /* Darken scrollbar thumb handle slightly on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Dark theme scrollbar thumb styling */
+  .dark ::-webkit-scrollbar-thumb {
+    background: #27272a;
+  }
+
+  /* Dark theme scrollbar thumb hover styling */
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+  }
+}
+
+/* Custom interactive utility helpers and subtle enterprise motion primitives */
+@layer utilities {
+  /* Application-wide readable typography overrides for legacy compact utilities on tables, forms, and tabs */
+  table thead th.text-xs,
+  table thead th.text-\[11px\],
+  table thead th.text-\[10px\] {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.4;
+  }
+
+  table tbody td.text-xs,
+  table tbody td.text-\[11px\] {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.5;
+  }
+
+  input.text-xs:not([type="checkbox"]):not([type="radio"]),
+  input.text-sm:not([type="checkbox"]):not([type="radio"]),
+  select.text-xs,
+  select.text-sm,
+  textarea.text-xs,
+  textarea.text-sm {
+    font-size: 1rem; /* 16px */
+    line-height: 1.5;
+  }
+
+  label.text-xs,
+  label.text-sm {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.45;
+  }
+
+  button.text-xs,
+  [role="tab"].text-xs {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.4;
+  }
+
+  /* Application-wide Compact Mode spacing & table density (preserves >= 14px readable text) */
+  :root[data-density="compact"] body {
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  :root[data-density="compact"] table thead th {
+    padding-top: var(--density-table-py);
+    padding-bottom: var(--density-table-py);
+    padding-left: var(--density-table-px);
+    padding-right: var(--density-table-px);
+    font-size: 0.875rem; /* 14px */
+  }
+
+  :root[data-density="compact"] table tbody td {
+    padding-top: var(--density-table-py);
+    padding-bottom: var(--density-table-py);
+    padding-left: var(--density-table-px);
+    padding-right: var(--density-table-px);
+    font-size: 0.875rem; /* 14px minimum preserved */
+    line-height: 1.4;
+  }
+
+  :root[data-density="compact"] .card-reflective,
+  :root[data-density="compact"] .card-interactive,
+  :root[data-density="compact"] main .rounded-2xl.p-5,
+  :root[data-density="compact"] main .rounded-2xl.p-6 {
+    padding: var(--density-card-pad);
+  }
+
+  :root[data-density="compact"] main .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--density-section-gap);
+  }
+
+  :root[data-density="compact"] main .gap-6 {
+    gap: var(--density-grid-gap);
+  }
+
+  :root[data-density="compact"] main .gap-5 {
+    gap: var(--density-grid-gap);
+  }
+
+  /* Hide scrollbar for tabs or pill sliders while preserving scroll ability */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Subtle page/section entrance fade with minimal 4px vertical settle (180ms) */
+  .animate-fadeIn {
+    animation: companyai-fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Smooth slide-down entrance for contextual toolbars, dropdowns, and floating action bars */
+  .animate-slideDown {
+    animation: companyai-slide-down 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Smooth modal surface entrance matching 240ms ease-out motion tokens */
+  .animate-scaleUp,
+  .animate-scaleIn {
+    animation: companyai-scale-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Horizontal GPU-accelerated chart / progress bar reveal (450ms ease-out, no layout shift) */
+  .animate-barGrow {
+    transform-origin: left center;
+    animation: companyai-bar-grow 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Vertical GPU-accelerated histogram / column bar reveal */
+  .animate-barGrowY {
+    transform-origin: bottom center;
+    animation: companyai-bar-grow-y 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Subtle shimmer sweep for skeleton placeholders in Light and Dark mode */
+  .animate-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.12) 25%,
+      rgba(148, 163, 184, 0.24) 50%,
+      rgba(148, 163, 184, 0.12) 75%
+    );
+    background-size: 200% 100%;
+    animation: companyai-shimmer 1.4s ease-in-out infinite;
+  }
+
+  /* Subtle enterprise card elevation hover transition without layout shift */
+  .card-interactive {
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Reflective enterprise card with top specular hairline and multi-layer shadow elevation */
+  .card-reflective {
+    position: relative;
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
+      0 2px 6px -1px rgba(15, 23, 42, 0.06),
+      0 1px 3px -1px rgba(15, 23, 42, 0.04);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+  .card-reflective:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9),
+      0 12px 24px -6px rgba(15, 23, 42, 0.12),
+      0 4px 12px -4px rgba(99, 102, 241, 0.14);
+  }
+  .dark .card-reflective {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+      0 2px 8px -2px rgba(0, 0, 0, 0.45);
+  }
+  .dark .card-reflective:hover {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+      0 14px 28px -6px rgba(0, 0, 0, 0.65),
+      0 0 0 1px rgba(129, 140, 248, 0.22);
+  }
+
+  /* Frosted topbar / sidebar specular glass surface */
+  .glass-surface {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.75);
+  }
+  .dark .glass-surface {
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Subtle diagonal glass reflection accent for hero / command surfaces */
+  .surface-reflection {
+    position: relative;
+    overflow: hidden;
+  }
+  .surface-reflection::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 38%, transparent 62%);
+    opacity: 0.7;
+    transition: opacity 240ms ease;
+  }
+  .dark .surface-reflection::after {
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.05) 0%, rgba(16, 185, 129, 0.02) 40%, transparent 65%);
+  }
+
+  /* Subtle micro-interaction button press + hover glow response */
+  .btn-interactive {
+    transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 180ms ease,
+      opacity 140ms ease;
+  }
+  .btn-interactive:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .btn-interactive:active:not(:disabled) {
+    transform: scale(0.985);
+  }
+
+  .btn-glow:hover:not(:disabled) {
+    box-shadow: 0 6px 18px -4px rgba(16, 185, 129, 0.28), 0 2px 6px -1px rgba(15, 23, 42, 0.08);
+  }
+
+  /* Aceternity-inspired subtle dot matrix backdrop for AI & Hero canvases */
+  .bg-dot-pattern {
+    background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .dark .bg-dot-pattern {
+    background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  }
+
+  /* Smooth table row hover highlight without layout shift */
+  .table-row-interactive {
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .table-row-interactive:hover {
+    background-color: rgba(236, 253, 245, 0.45);
+  }
+  .dark .table-row-interactive:hover {
+    background-color: rgba(30, 41, 59, 0.55);
+  }
+}
+
+@keyframes companyai-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes companyai-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes companyai-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes companyai-bar-grow {
+  from {
+    transform: scaleX(0);
+    opacity: 0.7;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes companyai-bar-grow-y {
+  from {
+    transform: scaleY(0);
+    opacity: 0.7;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes companyai-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Custom scrollbar styling for independent scrolling columns */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.65);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.65);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+/* React Bits StarBorder traveling border keyframes */
+.animate-star-bottom {
+  animation: companyai-star-bottom 6s linear infinite alternate;
+}
+
+.animate-star-top {
+  animation: companyai-star-top 6s linear infinite alternate;
+}
+
+@keyframes companyai-star-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes companyai-star-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}
+
+/* React Bits GradientText sweep */
+.animate-gradient-sweep {
+  animation: companyai-gradient-sweep 7s ease infinite;
+}
+
+@keyframes companyai-gradient-sweep {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Global reduced-motion accessibility guarantee across all CSS animations & transitions */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-fadeIn,
+  .animate-slideDown,
+  .animate-scaleUp,
+  .animate-scaleIn,
+  .animate-barGrow,
+  .animate-barGrowY,
+  .animate-shimmer,
+  .animate-star-bottom,
+  .animate-star-top,
+  .animate-gradient-sweep {
+    animation: none !important;
+  }
+  .card-interactive:hover,
+  .card-reflective:hover,
+  .btn-interactive:hover:not(:disabled),
+  .btn-interactive:active:not(:disabled) {
+    transform: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -25,13 +25,15 @@ TALENTRA is currently in **Phase 1: Development Environment & Infrastructure Bas
 TALENTRA/
 ├── frontend/             # React 18 + Vite + Tailwind CSS application
 │   ├── src/
-│   │   ├── components/   # Reusable UI components
+│   │   ├── components/
+│   │   │   ├── layout/   # AppLayout.jsx, Sidebar.jsx, Header.jsx
+│   │   │   └── ui/       # Modular reusable UI atoms
 │   │   ├── pages/        # Top-level route pages (HomePage.jsx)
 │   │   ├── services/     # Axios client configuration (api.js)
 │   │   ├── hooks/        # Custom React hooks
-│   │   ├── assets/       # Static assets
-│   │   ├── App.jsx       # Client router
-│   │   └── main.jsx      # React mount entry
+│   │   ├── App.jsx       # Client router with AppLayout shell
+│   │   ├── main.jsx      # React mount entry
+│   │   └── index.css     # Global Tailwind CSS directives
 │   ├── public/           # Static public assets
 │   ├── package.json      # Dependencies and scripts
 │   └── vite.config.js    # Vite configuration

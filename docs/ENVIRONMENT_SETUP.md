@@ -75,12 +75,13 @@ TALENTRA/
 │
 ├── frontend/                       # Client application root
 │   ├── src/                        # React application source code
-│   │   ├── components/             # Reusable UI widgets (buttons, modals, cards)
-│   │   ├── pages/                  # Top-level route pages (HomePage, etc.)
+│   │   ├── components/             # Reusable UI widgets and layout modules
+│   │   │   ├── layout/             # Shell components: Sidebar.jsx, Header.jsx, AppLayout.jsx
+│   │   │   └── ui/                 # Atomic UI primitives (.gitkeep)
+│   │   ├── pages/                  # Top-level route pages (HomePage.jsx)
 │   │   ├── services/               # External API client logic (api.js with Axios)
-│   │   ├── hooks/                  # Custom React hooks (useFetch, etc.)
-│   │   ├── assets/                 # Static media assets (SVGs, logos, images)
-│   │   ├── App.jsx                 # Client router definition and root component
+│   │   ├── hooks/                  # Custom React hooks
+│   │   ├── App.jsx                 # Client router definition and AppLayout wrapper
 │   │   ├── index.css               # Global Tailwind CSS directives
 │   │   └── main.jsx                # DOM mounting entry point
 │   ├── public/                     # Unprocessed public assets (favicons, robots.txt)

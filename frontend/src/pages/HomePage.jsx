@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import {
+  Layers,
+  Cpu,
+  Database,
+  RefreshCw,
+  Server,
+  Activity,
+  Code2,
+  Terminal,
+  ShieldCheck,
+  CheckCircle2,
+  ExternalLink,
+} from 'lucide-react';
+import { PageHeader } from '../components/common/PageHeader';
+import { MetricCard } from '../components/layout/MetricCard';
+import { Badge } from '../components/common/Badge';
+import { ExpandableSection } from '../components/common/ExpandableSection';
 import { getHealthStatus } from '../services/api';
 
 /**
- * TALENTRA Development Environment Starter Page.
+ * TALENTRA Environment Overview Page.
  *
- * Verifies and demonstrates:
- * 1. React rendering & lifecycle state hooks.
- * 2. React Router location awareness.
- * 3. Tailwind CSS styling & responsive grid layouts.
- * 4. Axios API communication with FastAPI & SQLite database health probe.
+ * Implements CompanyAI's visual design language:
+ * - PageHeader with BlurText typography entrance
+ * - MetricCard KPIs with SpotlightCard reflective hover & numeric reveal
+ * - Semantic Badges (brand, success, navy, warning, accent)
+ * - ExpandableSection for progressive disclosure of technical specifications
+ * - Light and Dark theme contrast across all surfaces
  */
 export default function HomePage() {
-  const location = useLocation();
   const [healthData, setHealthData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,167 +51,251 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-6 sm:p-12 font-sans">
-      {/* Header Bar */}
-      <header className="max-w-5xl w-full mx-auto flex items-center justify-between border-b border-slate-800 pb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xl tracking-wider text-white shadow-lg shadow-indigo-500/20">
-            T
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">TALENTRA</h1>
-            <p className="text-xs text-indigo-400 font-medium tracking-wide uppercase">
-              Talent Intelligence Platform
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-            Development Environment Ready
-          </span>
-        </div>
-      </header>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Page Header */}
+      <PageHeader
+        title="Environment Overview"
+        subtitle="Talent Intelligence Platform • Verified Development Baseline & Infrastructure Diagnostics"
+        badge={
+          <Badge variant="brand" size="sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+            <span>Infrastructure Active</span>
+          </Badge>
+        }
+        actions={
+          <button
+            type="button"
+            onClick={fetchHealth}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-navy-900 dark:bg-brand-600 hover:bg-navy-950 dark:hover:bg-brand-700 text-white text-btn-text shadow-subtle transition-all duration-150 btn-interactive disabled:opacity-60 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Probing...' : 'Re-probe System'}</span>
+          </button>
+        }
+      />
 
-      {/* Main Content Area */}
-      <main className="max-w-5xl w-full mx-auto my-auto py-10 space-y-10">
-        {/* Hero Section */}
-        <div className="space-y-4 text-center sm:text-left">
-          <div className="inline-block px-3 py-1 rounded-md text-xs font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800/50 mb-2">
-            Infrastructure Baseline v0.1.0
-          </div>
-          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            TALENTRA
-          </h2>
-          <p className="text-lg sm:text-xl text-slate-400 font-medium max-w-2xl">
-            Talent Intelligence Platform
-          </p>
-          <p className="text-sm text-slate-500 max-w-xl">
-            A clean, isolated, and verified foundation for recruitment analytics, candidate intelligence, and talent operations.
-          </p>
-        </div>
+      {/* KPI Metric Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* React Frontend KPI */}
+        <MetricCard
+          title="Frontend Engine"
+          value="React 18"
+          subvalue="Vite 6 + JSX Fast Refresh"
+          icon={Layers}
+          badgeText="Operational"
+          badgeVariant="brand"
+          trend="Sub-second build time"
+          spotlight
+        />
 
-        {/* Environment Verification Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* React Card */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Frontend Framework</div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-white">React 18</span>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">Active</span>
+        {/* Styling System KPI */}
+        <MetricCard
+          title="Design System"
+          value="CompanyAI"
+          subvalue="Tailwind CSS + Dark/Light Theme"
+          icon={Code2}
+          badgeText="Synchronized"
+          badgeVariant="emerald"
+          trend="Lucide React • Design Tokens"
+          spotlight
+        />
+
+        {/* Backend API KPI */}
+        <MetricCard
+          title="API Gateway"
+          value="FastAPI"
+          subvalue="Uvicorn ASGI • Port 8000"
+          icon={Cpu}
+          badgeText={healthData ? 'Live (200 OK)' : 'Probing...'}
+          badgeVariant={healthData ? 'brand' : 'amber'}
+          trend="Asynchronous Architecture"
+          spotlight
+        />
+
+        {/* Database Engine KPI */}
+        <MetricCard
+          title="Data Storage"
+          value="SQLite"
+          subvalue={healthData?.database?.database_url || 'data/talentra_dev.db'}
+          icon={Database}
+          badgeText={healthData?.database?.verified ? 'Connected' : 'Pending'}
+          badgeVariant={healthData?.database?.verified ? 'brand' : 'amber'}
+          trend="SQLAlchemy 2.0 ORM"
+          spotlight
+        />
+      </div>
+
+      {/* Backend & Database Live Diagnostics Panel */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder card-reflective space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-surface-darkBorder pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 border border-brand-200/80 dark:border-brand-700/60">
+              <Activity className="w-5 h-5" />
             </div>
-            <p className="text-xs text-slate-500 mt-2">Vite dev server + JSX rendering operational</p>
-          </div>
-
-          {/* Tailwind Card */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Styling Engine</div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-white">Tailwind CSS</span>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">Styled</span>
-            </div>
-            <p className="text-xs text-slate-500 mt-2">Utility classes & modern responsive layout</p>
-          </div>
-
-          {/* React Router Card */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Client Router</div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-white">React Router</span>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">Routed</span>
-            </div>
-            <p className="text-xs text-slate-500 mt-2 font-mono">Path: {location.pathname}</p>
-          </div>
-
-          {/* SQLite Card */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Dev Database</div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-white">SQLite + SQLAlchemy</span>
-              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
-                {healthData?.database?.verified ? 'Connected' : 'Pending'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-2 font-mono truncate" title={healthData?.database?.database_url}>
-              {healthData?.database?.database_url || 'data/talentra_dev.db'}
-            </p>
-          </div>
-        </div>
-
-        {/* Backend & Database Live Health Panel */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
             <div>
-              <h3 className="text-base font-semibold text-white">Backend & Database Integration Probe</h3>
-              <p className="text-xs text-slate-400">
-                Live communication between React (Axios) &rarr; FastAPI &rarr; SQLite connection verification
+              <h3 className="text-card-title text-navy-900 dark:text-white font-display">
+                Real-Time Health & Database Diagnostics
+              </h3>
+              <p className="text-helper-text text-slate-500 dark:text-slate-400">
+                Active end-to-end communication probe: React (Axios) &rarr; FastAPI &rarr; SQLite (<code className="font-mono text-xs">SELECT 1</code>)
               </p>
             </div>
-            <button
-              onClick={fetchHealth}
-              disabled={loading}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 transition disabled:opacity-50 border border-slate-700"
-            >
-              {loading ? 'Probing...' : 'Re-probe'}
-            </button>
           </div>
 
-          {loading && !healthData && (
-            <div className="text-sm text-slate-400 animate-pulse py-4 text-center">
-              Connecting to FastAPI backend (http://127.0.0.1:8000/health)...
-            </div>
-          )}
-
-          {error && (
-            <div className="p-4 rounded-lg bg-red-950/40 border border-red-800/50 text-red-300 text-xs space-y-1">
-              <div className="font-semibold flex items-center">
-                <span className="w-2 h-2 rounded-full bg-red-400 mr-2"></span>
-                Backend Connection Notice
-              </div>
-              <p>{error}</p>
-              <p className="text-slate-400">Ensure FastAPI is running: <code className="bg-slate-900 px-1 py-0.5 rounded">uvicorn backend.app.main:app --reload</code></p>
-            </div>
-          )}
-
-          {healthData && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">API Status</span>
-                <div className="text-emerald-400 font-bold text-sm mt-0.5 capitalize flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1.5"></span>
-                  {healthData.status}
-                </div>
-              </div>
-
-              <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Runtime Environment</span>
-                <div className="text-slate-200 font-semibold text-sm mt-0.5 capitalize font-mono">
-                  {healthData.environment}
-                </div>
-              </div>
-
-              <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Database Engine</span>
-                <div className="text-slate-200 font-semibold text-sm mt-0.5 uppercase font-mono">
-                  {healthData.database?.engine} ({healthData.database?.status})
-                </div>
-              </div>
-
-              <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800/60">
-                <span className="text-slate-500 uppercase font-semibold text-[10px]">Probe Timestamp</span>
-                <div className="text-slate-400 font-mono text-xs mt-0.5 truncate">
-                  {new Date(healthData.timestamp).toLocaleTimeString()}
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {healthData?.status === 'operational' ? (
+              <Badge variant="success" size="md">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Backend Healthy</span>
+              </Badge>
+            ) : loading ? (
+              <Badge variant="warning" size="md">
+                <span>Connecting...</span>
+              </Badge>
+            ) : (
+              <Badge variant="danger" size="md">
+                <span>Degraded</span>
+              </Badge>
+            )}
+          </div>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="max-w-5xl w-full mx-auto border-t border-slate-800/80 pt-6 text-center text-xs text-slate-500">
-        TALENTRA &copy; 2026 &bull; Talent Intelligence Platform &bull; Development Environment Baseline
-      </footer>
+        {/* Error Notification */}
+        {error && (
+          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/60 text-rose-800 dark:text-rose-200 text-xs sm:text-sm flex items-start gap-3 animate-fadeIn">
+            <Server className="w-5 h-5 flex-shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold block">Backend Communication Notice</span>
+              <p>{error}</p>
+              <p className="text-slate-600 dark:text-slate-400 text-xs font-mono">
+                Launch server: <code className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900">.\run_backend.ps1</code>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Diagnostics Metrics Row */}
+        {healthData && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs pt-1">
+            <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/60 dark:border-surface-darkBorder">
+              <span className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider block">
+                Platform Service
+              </span>
+              <span className="text-navy-900 dark:text-white font-bold text-sm mt-1 block truncate">
+                {healthData.app_name}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/60 dark:border-surface-darkBorder">
+              <span className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider block">
+                Runtime Environment
+              </span>
+              <span className="text-brand-600 dark:text-brand-400 font-bold text-sm mt-1 capitalize block font-mono">
+                {healthData.environment} (v{healthData.version})
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/60 dark:border-surface-darkBorder">
+              <span className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider block">
+                SQL Engine & Dialect
+              </span>
+              <span className="text-navy-900 dark:text-white font-bold text-sm mt-1 uppercase block font-mono">
+                {healthData.database?.engine} &bull; {healthData.database?.status}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/60 dark:border-surface-darkBorder">
+              <span className="text-slate-400 uppercase font-semibold text-[10px] tracking-wider block">
+                UTC Probe Timestamp
+              </span>
+              <span className="text-slate-600 dark:text-slate-300 font-mono text-xs mt-1 block truncate">
+                {new Date(healthData.timestamp).toLocaleTimeString()} ({new Date(healthData.timestamp).toLocaleDateString()})
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expandable Technical Documentation & Verification Sections */}
+      <div className="space-y-3">
+        <ExpandableSection
+          title="Design System & Architecture Alignment"
+          badge="CompanyAI 2.0 Spec"
+          icon={Code2}
+          defaultExpanded={true}
+        >
+          <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-2">
+            <p>
+              TALENTRA shares the exact design tokens, typography hierarchy, and visual components established by <strong>CompanyAI</strong>:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div className="p-3 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/70 dark:border-surface-darkBorder">
+                <span className="font-semibold text-navy-900 dark:text-white text-xs block mb-1">
+                  Typography Tokens
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block">
+                  Plus Jakarta Sans (headings), Inter (body 15-16px), JetBrains Mono (data & tables).
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/70 dark:border-surface-darkBorder">
+                <span className="font-semibold text-navy-900 dark:text-white text-xs block mb-1">
+                  Color Canvas
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block">
+                  Light: #F8FAFC canvas, #FFFFFF card. Dark: #000000 true black canvas, #0A0A0A card.
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-surface-50 dark:bg-surface-darkHover border border-slate-200/70 dark:border-surface-darkBorder">
+                <span className="font-semibold text-navy-900 dark:text-white text-xs block mb-1">
+                  Icon & Motion Primitives
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block">
+                  Lucide React, SpotlightCard reflective glows, Magnet buttons, smooth card elevation.
+                </span>
+              </div>
+            </div>
+          </div>
+        </ExpandableSection>
+
+        <ExpandableSection
+          title="Interactive API Documentation & Endpoint Reference"
+          badge="FastAPI OpenAPI"
+          icon={Terminal}
+          defaultExpanded={false}
+        >
+          <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300 pt-2">
+            <p>
+              The FastAPI backend exposes native OpenAPI schemas and interactive documentation:
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="http://127.0.0.1:8000/docs"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-50 dark:bg-surface-darkHover border border-slate-200 dark:border-surface-darkBorder text-navy-900 dark:text-white font-medium text-xs hover:border-brand-500 transition-colors"
+              >
+                <span>Interactive Swagger UI (/docs)</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+              <a
+                href="http://127.0.0.1:8000/redoc"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-50 dark:bg-surface-darkHover border border-slate-200 dark:border-surface-darkBorder text-navy-900 dark:text-white font-medium text-xs hover:border-brand-500 transition-colors"
+              >
+                <span>ReDoc Schema (/redoc)</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              </a>
+            </div>
+          </div>
+        </ExpandableSection>
+      </div>
+
+      {/* Footer System Note */}
+      <div className="text-center text-xs text-slate-400 dark:text-slate-500 pt-4 pb-2">
+        TALENTRA &copy; 2026 &bull; Talent Intelligence Platform &bull; CompanyAI Design Ecosystem Baseline
+      </div>
     </div>
   );
 }
