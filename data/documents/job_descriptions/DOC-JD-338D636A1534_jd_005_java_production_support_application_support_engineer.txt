@@ -1,0 +1,43 @@
+JAVA PRODUCTION SUPPORT ENGINEER / APPLICATION SUPPORT ENGINEER
+===============================================================
+Experience: Nearly 5 years (as stated in the resume)
+
+ROLE SUMMARY
+Seeking a Java Production Support Engineer to maintain the availability, stability, and performance of enterprise applications. The role focuses on incident management, log analysis, SQL-based investigation, Linux troubleshooting, batch and API monitoring, deployment validation, and root cause analysis.
+
+KEY RESPONSIBILITIES
+- Provide L1/L2 production support for Java-based enterprise applications and business-critical services.
+- Monitor application health, service availability, scheduled processing, and system performance.
+- Investigate production incidents involving application errors, transaction failures, database issues, and service interruptions.
+- Analyze application logs, exceptions, and error traces to identify root causes and recurring patterns.
+- Execute SQL queries to validate data, investigate discrepancies, and support issue resolution.
+- Use Linux/Unix commands to inspect processes, files, disk utilization, permissions, services, and log output.
+- Monitor APIs, integrations, file-based interfaces, and batch jobs; investigate failed or delayed processing.
+- Manage incident and service-request tickets, prioritize by severity and business impact, and meet SLA requirements.
+- Coordinate with development, database, and infrastructure teams during incident resolution and production outages.
+- Support approved deployments, release activities, service restarts, recovery procedures, and post-deployment validation.
+- Prepare root cause analysis documents, incident timelines, handover notes, runbooks, and knowledge base articles.
+- Participate in problem management and recommend preventive actions to reduce repeat incidents.
+
+REQUIRED SKILLS & EXPERIENCE
+- Java application support and troubleshooting
+- SQL and relational database investigation
+- Linux / Unix commands and server-side troubleshooting
+- Application log and exception analysis
+- Incident, problem, and change management
+- L1/L2 production support and SLA management
+- Batch job, API, and service monitoring
+- Deployment and production validation
+
+PREFERRED SKILLS
+- Spring Boot and REST API fundamentals
+- ServiceNow and Jira
+- Splunk or similar monitoring/log tools
+- Jenkins, Git, Postman, PuTTY, and WinSCP
+- Oracle, MySQL, or PostgreSQL
+
+SOURCE NOTES / VALIDATION
+Resume lists Capgemini (Feb 2025–Sep 2026), CPG BBM Services (Oct 2024–Jan 2025), and TCS (Jan 2022–Oct 2024). The Capgemini and CPG dates overlap around Jan/Feb 2025; confirm exact employment dates. The resume lists graduation year 2022 but does not specify the degree title.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.
+

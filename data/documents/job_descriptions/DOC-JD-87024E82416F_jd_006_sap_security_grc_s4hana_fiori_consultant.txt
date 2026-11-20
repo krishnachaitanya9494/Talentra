@@ -1,0 +1,43 @@
+SAP SECURITY & GRC CONSULTANT – S/4HANA / FIORI
+===============================================
+Experience: 5+ years (as stated in the resume; work history begins Sep 2020)
+
+ROLE SUMMARY
+Seeking an SAP Security and GRC Consultant to design, implement, and support SAP ECC and S/4HANA security, SAP GRC Access Control, and Fiori authorization. The role includes role design, user administration, segregation-of-duties analysis, access request workflows, emergency access management, and audit-ready controls.
+
+KEY RESPONSIBILITIES
+- Gather security requirements from business and functional teams and define role design strategies.
+- Design and maintain single, composite, master, and derived roles using PFCG, SU24, and organizational-level mappings.
+- Configure SAP ECC and S/4HANA authorizations across business modules based on approved requirements.
+- Implement and support SAP GRC Access Control 10.1 / 12.0 modules, including ARA, EAM, ARM, and BRM.
+- Configure rulesets, risks, functions, mitigating controls, and segregation-of-duties analysis.
+- Configure and maintain MSMP workflows, access request stages and paths, role owners, and business role management.
+- Manage Firefighter IDs, owners, controllers, assignments, emergency access, and log reviews.
+- Design Fiori roles, catalogs, groups, spaces, pages, target mappings, and OData service assignments.
+- Troubleshoot authorization and Fiori access issues using SU53, ST01, STAUTHTRACE, SUIM, and relevant Gateway logs.
+- Perform user administration, role provisioning, synchronization jobs, mass role uploads, and access reviews.
+- Support security testing, cutover, go-live, hypercare, and ongoing production support.
+- Maintain security documentation and coordinate with business, functional, and technical teams.
+
+REQUIRED SKILLS & EXPERIENCE
+- SAP ECC and S/4HANA Security
+- SAP GRC Access Control 10.1 / 12.0
+- ARA, EAM, ARM, and BRM
+- PFCG, SU24, role design, and authorization objects
+- Segregation of Duties (SoD) analysis and remediation
+- SAP Fiori authorization and Launchpad role configuration
+- SU53, ST01, STAUTHTRACE, and SUIM
+- User administration and access request workflows
+
+PREFERRED SKILLS
+- MSMP workflow configuration
+- OData service assignment and Gateway troubleshooting
+- CUA / identity management exposure
+- ServiceNow, Jira, CHARM, or other ticketing tools
+- Greenfield S/4HANA implementation experience
+
+SOURCE NOTES / VALIDATION
+Resume states 5+ years and lists Tata Technologies roles from Sep 2020 onward. Project environments include S/4HANA, ECC, GRC AC 10.1/12.0, and Fiori. Client/project references include Agratas, Rivian, Tata Motors, and Honda.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.
+

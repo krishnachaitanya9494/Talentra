@@ -1,0 +1,42 @@
+SAP CPI / INTEGRATION SUITE & PI/PO CONSULTANT
+==============================================
+Experience: Resume states 4+ years; employment section lists Capgemini from Dec 2019 to present. Confirm the accurate total.
+
+ROLE SUMMARY
+Seeking an SAP Integration Consultant with experience in SAP CPI / Integration Suite and SAP PI/PO to design, develop, deploy, monitor, and support enterprise integrations between SAP and non-SAP systems. The role includes interface design, mappings, adapters, APIs, connectivity, testing, and production monitoring.
+
+KEY RESPONSIBILITIES
+- Analyze business and functional requirements and translate them into integration designs and technical specifications.
+- Develop and configure SAP PI/PO objects, including ESR interface objects, mapping objects, and integration scenarios.
+- Configure Integration Directory objects such as business components, communication channels, receiver determination, interface determination, and agreements.
+- Build and maintain SAP CPI iFlows using content modifiers, routers, request-reply, message transformations, process steps, and exception subprocesses.
+- Configure and support adapters including SOAP, REST, OData, SFTP, FTP, File, IDoc, RFC, JMS, HTTP/HTTPS, Salesforce, and Mail as required.
+- Develop message mappings, XSLT mappings, value mappings, and user-defined functions where applicable.
+- Work with REST APIs, API consumption and publishing, Swagger documentation, and deployment through CLI.
+- Configure security materials, certificates, connectivity tests, and SAP Cloud Connector for on-premises connectivity.
+- Monitor message processing, deployed artifacts, trace logs, component status, and runtime errors; troubleshoot failed interfaces.
+- Perform unit, integration, and performance testing using tools such as Postman and SOAP UI.
+- Support production incidents, enhancements, transports, and coordination with functional and technical teams.
+
+REQUIRED SKILLS & EXPERIENCE
+- SAP CPI / SAP Integration Suite
+- SAP PI/PO (including PI 7.x / PO 7.5 exposure)
+- iFlow development and monitoring
+- ESR and Integration Directory
+- Message mapping, XSLT, and value mapping
+- Adapters such as SOAP, REST, SFTP, IDoc, RFC, and JMS
+- REST API integration and troubleshooting
+- XML and SAP ECC / S/4HANA integration concepts
+
+PREFERRED SKILLS
+- SAP Cloud Connector and certificate/security configuration
+- Swagger and CLI deployment
+- Postman and SOAP UI
+- CCBPM, proxy, and JDBC adapter knowledge
+- Azure DevOps exposure
+
+SOURCE NOTES / VALIDATION
+Resume states 4+ years in the profile but lists Capgemini employment from Dec 2019 to present. This discrepancy should be clarified before publishing a fixed experience requirement. Project examples include Volvo Cars integration and production support.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.
+

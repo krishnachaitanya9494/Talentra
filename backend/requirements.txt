@@ -5,6 +5,7 @@ uvicorn[standard]>=0.32.0
 
 # Database ORM and Toolkit (stable 2.0 branch)
 sqlalchemy>=2.0.35,<2.1.0
+alembic>=1.13.0
 
 # Data validation and settings management
 pydantic>=2.9.0
@@ -14,3 +15,9 @@ python-dotenv>=1.0.1
 # Testing and test HTTP client
 pytest>=8.3.0
 httpx>=0.28.0
+
+# File upload and document parsing
+python-multipart>=0.0.20
+pypdf>=5.0.0
+python-docx>=1.1.0
+openpyxl>=3.1.0

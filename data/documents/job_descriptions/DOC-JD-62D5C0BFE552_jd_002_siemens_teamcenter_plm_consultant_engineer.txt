@@ -1,0 +1,40 @@
+SIEMENS TEAMCENTER PLM CONSULTANT / ENGINEER
+============================================
+Experience: Approximately 5 years (resume filename states 5 years 2 months; work history spans Oct 2020–Dec 2025)
+
+ROLE SUMMARY
+Seeking a Teamcenter PLM Consultant to support, configure, customize, and enhance Siemens Teamcenter environments. The role covers BMIDE, workflows, access management, product structures, CAD integration, deployments, and L1/L2 user support.
+
+KEY RESPONSIBILITIES
+- Install, configure, and support Teamcenter environments and use Deployment Center for deployment activities.
+- Configure and customize Teamcenter data models using BMIDE, including business objects, properties, LOVs, and rules.
+- Create and modify Naming Rules, Deep Copy Rules, GRM rules/roles, display rules, and other BMIDE configurations.
+- Design and update workflow templates using Workflow Designer based on business requirements.
+- Configure Access Manager and manage user access to Teamcenter data and objects.
+- Create and modify product structures, revisions, and variant rules using Structure Manager.
+- Build and maintain searches and queries using Query Builder.
+- Support integration of Teamcenter with CAD applications, particularly NX; troubleshoot integration issues.
+- Perform hot and cold deployments, backups, environment maintenance, and release-related activities.
+- Provide L1/L2 support, investigate defects, resolve user issues, document solutions, and coordinate with development and infrastructure teams.
+- Support engineering change processes and the end-to-end ECO cycle.
+
+REQUIRED SKILLS & EXPERIENCE
+- Siemens Teamcenter administration and support
+- BMIDE configuration and customization
+- Workflow Designer
+- Access Manager and user authorization
+- Structure Manager and product structures
+- Query Builder
+- Business objects, properties, LOVs, and BMIDE rules
+- Teamcenter deployment and troubleshooting
+
+PREFERRED SKILLS
+- Teamcenter RAC and Active Workspace (AWC)
+- NX CAD integration; familiarity with CATIA or SolidWorks
+- C++ / Java and MS SQL exposure
+
+SOURCE NOTES / VALIDATION
+Resume includes Teamcenter 13.1, AWC, RAC, NX integration, BMIDE, and L1/L2 support. Candidate location shown as Pune. Earlier mechanical design experience using NX 12 is also included.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.
+

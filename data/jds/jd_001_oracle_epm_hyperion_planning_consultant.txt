@@ -1,0 +1,38 @@
+ORACLE EPM / HYPERION PLANNING CONSULTANT
+=========================================
+Experience: 5 years (as stated in the resume)
+
+ROLE SUMMARY
+Seeking an Oracle EPM / Hyperion Planning Consultant to develop, administer, support, and enhance on-premises and cloud planning applications. The role focuses on Essbase, Hyperion Planning, PBCS/EPBCS, metadata and data loads, business rules, forms, reporting, security, and application automation.
+
+KEY RESPONSIBILITIES
+- Develop and maintain Oracle Hyperion Essbase and Planning applications, including PBCS and EPBCS environments.
+- Build and maintain application metadata, dimensions, outlines, and rules files based on business requirements and source mockups.
+- Configure and maintain forms, dashboards, navigation flows, and planning functionality for budgeting and forecasting.
+- Create and modify calculation and allocation rules using Calculation Manager; validate calculations and business data.
+- Load data through Data Management and FDMEE, including mappings, locations, and file-based or source-system integrations.
+- Perform data reconciliation, validation, troubleshooting, and Smart View analysis for actuals, budgets, and forecasts.
+- Manage application security, user access, filters, groups, and role-based permissions.
+- Perform application backups, snapshots, exports/imports, migrations, and recovery activities.
+- Automate scheduled jobs and administrative tasks using EPM Automate and MAXL where applicable.
+- Prepare user documentation and provide walkthroughs, training, and application support.
+
+REQUIRED SKILLS & EXPERIENCE
+- Oracle Hyperion Essbase and Hyperion Planning
+- Oracle PBCS / EPBCS
+- Data Management / FDMEE
+- Calculation Manager and business rules
+- Metadata and dimension management
+- Smart View and Hyperion Financial Reporting
+- Application security, snapshots, backups, and migrations
+- SQL and Windows environment familiarity
+
+PREFERRED SKILLS
+- Experience with MAXL and EPM Automate scheduling
+- Exposure to HCM and GL data sources
+
+SOURCE NOTES / VALIDATION
+Resume evidence: 5 years stated; project environments include EPBCS, PBCS, Essbase, Smart View, Data Management/FDMEE, and DRM. Current employment is listed as Teamware Solutions (PwC client), Nov 2025–present. Earlier employment dates are also listed; verify chronology during screening.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.
+

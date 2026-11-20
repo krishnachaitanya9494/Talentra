@@ -2,13 +2,16 @@
 Database Engine and Session Management Module for TALENTRA.
 
 Establishes an isolated SQLAlchemy connection to the local SQLite database,
-manages session lifecycles, and provides connectivity diagnostics.
+enforces SQLite foreign key integrity constraints, manages session lifecycles,
+and provides connectivity diagnostics.
 """
 
 from typing import Generator, Dict, Any
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy import create_engine, text, event
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker, Session
 from backend.app.core.config import settings
+from backend.app.models.base import Base
 
 # In SQLite, multiple threads (FastAPI request handlers) can share the connection
 # safely only when check_same_thread is disabled.
@@ -20,9 +23,22 @@ if settings.DATABASE_URL.startswith("sqlite"):
 engine = create_engine(
     settings.DATABASE_URL,
     connect_args=connect_args,
-    # echo=False prevents SQL logging from cluttering development logs unless requested
+    # echo=False prevents verbose SQL logging from cluttering development output
     echo=False,
 )
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    """
+    Ensures SQLite enforces foreign key referential integrity constraints (PRAGMA foreign_keys=ON)
+    for every newly opened DBAPI connection in SQLite.
+    """
+    if type(dbapi_connection).__module__ == "sqlite3":
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
 
 # SessionLocal: factory for generating independent database sessions per request
 SessionLocal = sessionmaker(
@@ -30,9 +46,6 @@ SessionLocal = sessionmaker(
     autoflush=False,
     bind=engine,
 )
-
-# Declarative Base: foundational class for future ORM models
-Base = declarative_base()
 
 
 def get_db() -> Generator[Session, None, None]:

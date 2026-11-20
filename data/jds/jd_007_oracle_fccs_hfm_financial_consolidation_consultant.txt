@@ -1,0 +1,43 @@
+ORACLE FCCS / HFM CONSULTANT – FINANCIAL CONSOLIDATION
+======================================================
+Experience: 5 years (as stated in the resume; employment listed from Sep 2021 to present)
+
+ROLE SUMMARY
+Seeking an Oracle EPM Financial Consolidation Consultant to implement, support, and enhance Oracle FCCS and Hyperion Financial Management applications. The role focuses on financial close, consolidation, metadata, intercompany eliminations, data integration, journals, reporting, Smart View, security, and month-end support.
+
+KEY RESPONSIBILITIES
+- Support and enhance Oracle FCCS and HFM applications for financial consolidation and close processes.
+- Configure and maintain metadata for Entity, Account, Scenario, Currency, and Custom dimensions.
+- Run consolidation and translation processes and validate financial data after consolidation.
+- Configure and support intercompany (ICP) eliminations, ownership management, and consolidation methods.
+- Manage Data Management / FDMEE integrations, including import formats, locations, data load rules, mappings, and file-based loads.
+- Schedule and monitor data loads, investigate failures, and reconcile data across source and target applications.
+- Support journals, approval processes, data forms, data grids, dashboards, and financial reports.
+- Create and maintain Smart View and Hyperion Financial Reporting (HFR) reports; troubleshoot user connections and templates.
+- Manage user access and security through Shared Services.
+- Perform application cloning, artifact migration using LCM, backups, and post-copy validation.
+- Support Oracle patching, service restarts, regression testing, EPM Automate activities, and application sanity checks.
+- Handle incidents and change requests through ServiceNow and coordinate with users and Oracle support as needed.
+- Support month-end close activities, period opening/closing, and financial reporting deadlines.
+
+REQUIRED SKILLS & EXPERIENCE
+- Oracle FCCS and/or Hyperion Financial Management (HFM)
+- Oracle Data Management / FDMEE
+- Financial consolidation and close processes
+- Metadata and dimension management
+- Intercompany eliminations and FX rates
+- Data loads, mappings, validation, and reconciliation
+- Smart View and Hyperion Financial Reporting
+- Shared Services security and user support
+
+PREFERRED SKILLS
+- EPM Automate
+- Lifecycle Management (LCM) migrations
+- Journals, ownership management, and approval workflows
+- Oracle patching and regression testing
+- ServiceNow incident and change management
+
+SOURCE NOTES / VALIDATION
+Resume states 5 years and lists Firstsource employment from Sep 2021 to present. Project sections include Citizens (Oct 2024–present), NetApp (Jan–Sep 2024), and Boston Scientific (Sep 2021–Dec 2024); the last two project date ranges overlap. Confirm project chronology and exact experience before publishing.
+
+Prepared from the supplied resume. Validate role scope, experience, and project details before external publication.

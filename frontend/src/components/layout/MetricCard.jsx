@@ -60,12 +60,14 @@ export const AnimatedMetricValue = ({ value, suffix = '', decimals }) => {
 export const MetricCard = ({
   title,
   value,
+  unit,
   subvalue,
   icon: Icon,
   badgeText,
   badgeVariant = 'brand',
   trend,
   onClick,
+  isSelected = false,
   isLoading = false,
   spotlight = true,
   className = '',
@@ -89,79 +91,102 @@ export const MetricCard = ({
     switch (variant) {
       case 'brand':
       case 'emerald':
-        return 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-700/60';
+        return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60';
       case 'amber':
         return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60';
       case 'blue':
         return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60';
       case 'neutral':
       default:
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60';
     }
   };
 
   const Container = spotlight ? SpotlightCard : 'div';
   const containerProps = spotlight
     ? {
-        intensity: 0.22,
-        borderGlow: 0.4,
-        spotlightSize: 190,
+        intensity: 0.18,
+        borderGlow: 0.35,
+        spotlightSize: 220,
         proximity: 48,
       }
     : {};
 
-  // Render KPI card with hybrid enterprise styling, React Bits hover spotlight, and dark mode compatibility.
   return (
     <Container
       {...containerProps}
       onClick={onClick}
-      className={`group p-5 bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder rounded-2xl card-reflective h-full flex flex-col justify-between ${
-        onClick
-          ? 'cursor-pointer hover:border-brand-300/80 dark:hover:border-brand-700/60'
-          : ''
-      } ${className}`}
+      className={`group p-5 rounded-2xl h-full flex flex-col justify-between transition-all duration-200 ${
+        isSelected
+          ? 'border-2 border-brand-500 bg-brand-50/15 dark:bg-brand-950/15 shadow-sm'
+          : 'bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-subtle hover:-translate-y-0.5'
+      } ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       <div>
-        {/* Top row with label (14-16px) and optional icon */}
+        {/* Top row with clean label and icon */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm sm:text-[15px] font-medium text-slate-600 dark:text-slate-300 tracking-wide">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             {title}
           </span>
           {Icon && (
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-surface-darkHover border border-slate-100 dark:border-slate-700/60 text-slate-500 dark:text-slate-300 transition-transform duration-200 group-hover:scale-105 group-hover:text-brand-600 dark:group-hover:text-brand-400">
-              <Icon className="w-4 h-4 stroke-[1.75]" />
+            <div
+              className={`p-2 rounded-xl border transition-all duration-200 ${
+                isSelected
+                  ? 'bg-brand-500 text-white border-brand-600 shadow-sm'
+                  : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 group-hover:bg-brand-50/50'
+              }`}
+            >
+              <Icon className="w-4 h-4 stroke-[2]" />
             </div>
           )}
         </div>
 
-        {/* Numerical value (30-36px) and secondary context stacked cleanly */}
+        {/* Clean, bold sans-serif numerical value with unit */}
         <div className="mb-2">
-          <div className="text-[30px] sm:text-[34px] lg:text-[36px] font-bold text-navy-900 dark:text-white tracking-tight font-mono leading-tight">
-            <AnimatedMetricValue value={value} />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl sm:text-4xl font-extrabold text-navy-900 dark:text-white tracking-tight font-sans tabular-nums leading-none">
+              <AnimatedMetricValue value={value} />
+            </span>
+            {unit && (
+              <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 font-sans">
+                {unit}
+              </span>
+            )}
           </div>
           {subvalue && (
-            <div className="text-[13px] sm:text-sm text-slate-500 dark:text-slate-400 font-normal truncate mt-1">
-              {subvalue}
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-normal truncate mt-1.5 flex items-center gap-1.5">
+              <span>{subvalue}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Footer row with status badge or trend context */}
-      {(trend || badgeText) && (
-        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-surface-darkBorder mt-2">
-          {badgeText && (
-            <span className={`text-[13px] font-semibold px-2.5 py-0.5 rounded-md ${getBadgeClass(badgeVariant)}`}>
-              {badgeText}
-            </span>
-          )}
-          {trend && (
-            <span className="text-[13px] text-slate-500 dark:text-slate-400 truncate">
-              {trend}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Footer row: minimal active status pill */}
+      <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-surface-darkBorder/80 mt-3">
+        {badgeText ? (
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${getBadgeClass(badgeVariant)}`}>
+            {isSelected && (
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
+            )}
+            <span>{badgeText}</span>
+          </span>
+        ) : isSelected ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Active View</span>
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+            Click to view records
+          </span>
+        )}
+
+        {trend && (
+          <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
+            {trend}
+          </span>
+        )}
+      </div>
     </Container>
   );
 };

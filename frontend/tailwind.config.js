@@ -58,15 +58,16 @@ export default {
         },
         // Clean neutral background canvas supporting both light and dark themes.
         surface: {
-          50: '#F8FAFC',  // Main app neutral canvas (light)
-          100: '#F1F5F9', // Slightly darkened border/card hover (light)
-          200: '#E2E8F0', // Border divider (light)
-          card: '#FFFFFF', // Clean white card background (light)
-          // True neutral pitch-black & carbon-zinc surfaces for Dark Mode (no navy tint).
-          darkCanvas: '#000000', // True black main canvas
-          darkCard: '#0A0A0A',   // Deep carbon-black primary card background
-          darkBorder: '#1F1F23', // Neutral dark zinc border
-          darkHover: '#17171A',  // Neutral elevated hover state
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          card: '#FFFFFF',
+          dark: '#09090B',        // Main dark canvas background
+          darkCanvas: '#09090B',  // True dark canvas (was pure black)
+          darkCard: '#111113',    // Primary dark card background
+          darkCardSecondary: '#18181B', // Secondary dark card background
+          darkHover: '#222225',   // Dark elevated hover state
+          darkBorder: '#27272A',  // Neutral dark border
         }
       },
       // Configure crisp enterprise typography hierarchy.

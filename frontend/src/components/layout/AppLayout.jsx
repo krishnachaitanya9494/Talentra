@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { PageTransition } from '../common/PageTransition';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { useTheme } from '../../context/ThemeContext';
 
 /**
@@ -56,7 +57,9 @@ export default function AppLayout({ children }) {
           } transition-colors`}
         >
           <PageTransition transitionKey={location.pathname}>
-            {children || <Outlet />}
+            <ErrorBoundary title="Section Rendering Error">
+              {children || <Outlet />}
+            </ErrorBoundary>
           </PageTransition>
         </main>
       </div>

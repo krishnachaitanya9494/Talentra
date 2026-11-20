@@ -40,7 +40,7 @@ export const Tooltip = ({
         <span
           id={tooltipId}
           role="tooltip"
-          className={`pointer-events-none absolute z-50 whitespace-nowrap px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-navy-950 dark:bg-slate-100 text-white dark:text-navy-950 shadow-dropdown animate-fadeIn ${positionClass}`}
+          className={`pointer-events-none absolute z-50 whitespace-nowrap px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-navy-950 dark:bg-surface-darkCard text-white dark:text-slate-100 shadow-dropdown animate-fadeIn ${positionClass}`}
         >
           {content}
         </span>

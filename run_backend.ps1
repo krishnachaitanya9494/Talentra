@@ -16,9 +16,17 @@ if (-not (Test-Path $VenvPython)) {
     & $VenvPython -m pip install -r "backend\requirements.txt"
 }
 
-Write-Host "Backend server launching at http://127.0.0.1:8000" -ForegroundColor Green
-Write-Host "Interactive API Docs: http://127.0.0.1:8000/docs" -ForegroundColor Gray
-Write-Host "Health Check: http://127.0.0.1:8000/health" -ForegroundColor Gray
+# Determine target port (default 8000, fallback to 8001 if 8000 is occupied)
+$Port = 8000
+$PortCheck = netstat -ano | findstr ":8000 " | findstr "LISTENING"
+if ($PortCheck) {
+    Write-Host "Port 8000 is currently occupied. Falling back to port 8001..." -ForegroundColor Yellow
+    $Port = 8001
+}
+
+Write-Host "Backend server launching at http://127.0.0.1:$Port" -ForegroundColor Green
+Write-Host "Interactive API Docs: http://127.0.0.1:$Port/docs" -ForegroundColor Gray
+Write-Host "Data Summary API: http://127.0.0.1:$Port/api/v1/data/summary" -ForegroundColor Gray
 Write-Host "Press Ctrl+C to terminate." -ForegroundColor DarkGray
 
-& $VenvPython -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+& $VenvPython -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port $Port
