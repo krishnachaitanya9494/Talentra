@@ -418,6 +418,38 @@ export async function getJDInterviewKit(jdId) {
   return response.data;
 }
 
+export async function getStructuredJD(jdId) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/structured`);
+  return response.data;
+}
+
+export async function updateStructuredJD(jdId, payload) {
+  const response = await apiClient.put(`/api/v1/jds/${jdId}/structured`, payload);
+  return response.data;
+}
+
+export async function getJDValidation(jdId) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/validation`);
+  return response.data;
+}
+
+export async function getJDVersions(jdId) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/versions`);
+  return response.data;
+}
+
+export async function createNewJDVersion(jdId, payload) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/versions`, payload);
+  return response.data;
+}
+
+export async function getJDVersionDiff(jdId, verA, verB) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/versions/diff`, {
+    params: { ver_a: verA, ver_b: verB },
+  });
+  return response.data;
+}
+
 export async function scheduleInterview(payload) {
   const response = await apiClient.post('/api/v1/interviews/schedule', payload);
   return response.data;

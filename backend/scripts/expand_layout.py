@@ -1,0 +1,153 @@
+with open("frontend/src/components/documents/JobWorkspace.jsx", "r", encoding="utf-8") as f:
+    content = f.read()
+
+# 1. Update Layout container
+content = content.replace(
+    '<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">',
+    '<div className="flex flex-col lg:flex-row gap-5 items-start w-full">'
+)
+
+content = content.replace(
+    '<div className="lg:col-span-4 space-y-3">',
+    '<div className="w-full lg:w-[440px] xl:w-[480px] shrink-0 space-y-3">'
+)
+
+content = content.replace(
+    '<div className="lg:col-span-8 space-y-4">',
+    '<div className="flex-1 min-w-0 w-full space-y-4">'
+)
+
+# 2. Update card inner elements to prevent any text wrapping
+old_card_badge_row = '''                      {/* Top Badges Row */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 font-mono">
+                            {jd.req_code}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 text-[11px] font-bold border border-blue-200/60 dark:border-blue-800/60">
+                            v1
+                          </span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium truncate max-w-[170px]">
+                            {jd.department || 'Engineering & Delivery'}
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <select
+                            value={jd.status || 'Under Review'}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              jd.status = e.target.value;
+                              setJds([...jds]);
+                              triggerToast(`Updated ${jd.req_code} status to ${e.target.value}`);
+                            }}
+                            className="appearance-none pl-2.5 pr-6 py-1 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer focus:outline-none"
+                          >
+                            <option value="Under Review">Under Review</option>
+                            <option value="Active">Active</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-1.5 top-1.5 pointer-events-none" />
+                        </div>
+                      </div>'''
+
+new_card_badge_row = '''                      {/* Top Badges Row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 font-mono whitespace-nowrap shrink-0">
+                            {jd.req_code}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 text-[11px] font-bold border border-blue-200/60 dark:border-blue-800/60 whitespace-nowrap shrink-0">
+                            v1
+                          </span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium truncate">
+                            {jd.department || 'Engineering & Delivery'}
+                          </span>
+                        </div>
+
+                        <div className="relative shrink-0">
+                          <select
+                            value={jd.status || 'Under Review'}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              jd.status = e.target.value;
+                              setJds([...jds]);
+                              triggerToast(`Updated ${jd.req_code} status to ${e.target.value}`);
+                            }}
+                            className="appearance-none pl-2.5 pr-6 py-1 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer focus:outline-none whitespace-nowrap"
+                          >
+                            <option value="Under Review">Under Review</option>
+                            <option value="Active">Active</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-1.5 top-2 pointer-events-none" />
+                        </div>
+                      </div>'''
+
+old_card_footer = '''                      {/* Footer Row */}
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{jd.location || 'Hyderabad / Remote'}</span>
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                            <span>5 - 8 Years</span>
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedJd(jd);
+                            setActiveTab('specs');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Analyze JD</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        </button>
+                      </div>'''
+
+new_card_footer = '''                      {/* Footer Row */}
+                      <div className="flex items-center justify-between pt-1 gap-2">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="whitespace-nowrap">{jd.location || 'Hyderabad / Remote'}</span>
+                          </span>
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="whitespace-nowrap">5 - 8 Years</span>
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedJd(jd);
+                            setActiveTab('specs');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-2xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="whitespace-nowrap">Analyze JD</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        </button>
+                      </div>'''
+
+content = content.replace(old_card_badge_row, new_card_badge_row)
+content = content.replace(old_card_footer, new_card_footer)
+
+with open("frontend/src/components/documents/JobWorkspace.jsx", "w", encoding="utf-8") as f:
+    f.write(content)
+
+print("SUCCESS: Updated JobWorkspace.jsx breadth and layout!")

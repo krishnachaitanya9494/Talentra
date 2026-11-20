@@ -115,6 +115,22 @@ class JobDescriptionParser:
             "extraction_evidence": evidence,
         }
 
+    @staticmethod
+    def _format_title(title_str: str) -> str:
+        acronyms = {"sap", "aws", "gcp", "ai", "ml", "qa", "ui", "ux", "devops", "grc", "fiori", "plm", "erp", "crm", "epm", "pbcs"}
+        words = title_str.split()
+        res = []
+        for w in words:
+            clean_w = re.sub(r"[^\w/]", "", w).lower()
+            if clean_w in acronyms:
+                res.append(w.upper())
+            elif "/" in w:
+                parts = [p.upper() if p.lower() in acronyms else p.capitalize() for p in w.split("/")]
+                res.append("/".join(parts))
+            else:
+                res.append(w.capitalize())
+        return " ".join(res)
+
     @classmethod
     def _extract_job_title(
         cls,
@@ -133,8 +149,11 @@ class JobDescriptionParser:
         )
         if label_match:
             cand = label_match.group(1).split("\n")[0].strip()
-            if 3 <= len(cand) <= 60:
-                return cand.title(), f"Matched title label: '{cand}'", 0.95
+            if (
+                3 <= len(cand) <= 60
+                and not re.match(r"^(summary|overview|responsibilities|requirements|description)\b", cand, re.IGNORECASE)
+            ):
+                return cls._format_title(cand), f"Matched title label: '{cand}'", 0.95
 
         # Check first 5 lines for typical engineering titles
         for line in lines[:5]:
@@ -142,13 +161,13 @@ class JobDescriptionParser:
             if 4 <= len(clean) <= 60 and not clean.lower().startswith(("about", "company", "overview", "http")):
                 # Check if line contains words like Engineer, Developer, Architect, Specialist, Manager
                 if re.search(r"\b(engineer|developer|architect|specialist|manager|lead|consultant|analyst)\b", clean, re.IGNORECASE):
-                    return clean.title(), f"Extracted from document header line: '{clean}'", 0.90
+                    return cls._format_title(clean), f"Extracted from document header line: '{clean}'", 0.90
 
         # Fallback to filename
         if filename:
             stem = filename.replace(".txt", "").replace(".docx", "").replace(".pdf", "").replace("_", " ").strip()
             if 3 <= len(stem) <= 50:
-                return stem.title(), f"Derived from filename: '{filename}'", 0.70
+                return cls._format_title(stem), f"Derived from filename: '{filename}'", 0.70
 
         return None, "Job title could not be determined", 0.0
 
@@ -187,6 +206,12 @@ class JobDescriptionParser:
         pref_part = parts[1] if len(parts) > 1 else ""
 
         for raw_kw, canonical in SKILL_CANONICAL_MAP.items():
+            if raw_kw == "go" and not re.search(
+                r"\b(?:golang|go programming(?: language)?|go language|go developer|go engineer)\b",
+                text,
+                re.IGNORECASE,
+            ):
+                continue
             pattern = rf"(?<![a-zA-Z0-9_]){re.escape(raw_kw)}(?![a-zA-Z0-9_])"
             if re.search(pattern, main_part, re.IGNORECASE):
                 if canonical not in seen:

@@ -14,13 +14,20 @@ Tests:
 """
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
 from backend.app.main import app
 from backend.app.database.session import SessionLocal
+from backend.app.models.base import Base
 from backend.app.models.candidate import Candidate
-from backend.app.models.document import JobDescriptionDocument
+from backend.app.models.candidate_intelligence import CandidateResumeLink
+from backend.app.models.document import JobDescriptionDocument, ResumeDocument
 from backend.app.models.matching import MatchingRun, CandidateMatch, MatchEvidence
 from backend.app.services.matching.matching_engine import MatchingEngine
+from backend.app.services.extraction.jd_parser import JobDescriptionParser
+from backend.app.services.extraction.resume_parser import ResumeParser
+from backend.app.services.resume_repository_sync import sync_repository_resumes_to_candidates
 
 client = TestClient(app)
 
@@ -110,6 +117,146 @@ def test_critical_mandatory_mismatch_protection():
     assert res["overall_score"] < 45.0
     assert len(res["matched_skills"]) == 0
     assert len(res["missing_skills"]) == 4
+
+
+def test_sap_security_jd_extraction_ignores_go_live_and_finds_domain_skills():
+    jd_text = """
+    SAP SECURITY & GRC CONSULTANT - S/4HANA / FIORI
+    Implement SAP GRC Access Control and Fiori authorization.
+    Configure PFCG and SU24 roles and segregation of duties.
+    Support cutover, go-live, and hypercare.
+    """
+
+    parsed = JobDescriptionParser.parse(jd_text)
+
+    assert "sap" in parsed["job_title"].lower()
+    assert parsed["job_title"].lower() != "summary"
+    assert "SAP Security" in parsed["required_skills_list"]
+    assert "SAP GRC Access Control" in parsed["required_skills_list"]
+    assert "SAP S/4HANA" in parsed["required_skills_list"]
+    assert "SAP Fiori" in parsed["required_skills_list"]
+    assert "Go" not in parsed["required_skills_list"]
+    assert "Go" not in ResumeParser.parse(jd_text)["skills_list"]
+
+    cloud_resume = ResumeParser.parse("Cloud Architect with AWS, ARM-based servers, and Kubernetes.")
+    sap_resume = ResumeParser.parse("SAP GRC Access Control: ARA, ARM, BRM, EAM.")
+    assert "ARM" not in cloud_resume["skills_list"]
+    assert {"ARA", "ARM", "BRM", "EAM"}.issubset(set(sap_resume["skills_list"]))
+
+
+def test_unrelated_cloud_candidate_is_not_suitable_for_sap_security_jd():
+    candidate = Candidate(
+        candidate_code="CAN-TEST-SAP-MISMATCH",
+        first_name="Cloud",
+        last_name="Architect",
+        email="cloud.architect@example.com",
+        skills="AWS, Go, ARM, Kubernetes, Terraform",
+        total_experience_years=7.5,
+        current_title="Senior Cloud Architect",
+        location="Bangalore",
+    )
+    jd_spec = {
+        "job_title": "SAP Security GRC S/4HANA Fiori Consultant",
+        "required_skills_list": ["SAP Security"],
+        "min_experience_years": 5.0,
+        "max_experience_years": 10.0,
+        "location": "Bangalore",
+        "work_mode": "On-site",
+    }
+
+    result = MatchingEngine.evaluate_candidate(candidate, jd_spec)
+
+    assert result["has_critical_mismatch"] is True
+    assert result["matched_skills"] == []
+    assert result["segment"] == "Not Suitable"
+
+
+def test_repository_resume_sync_enriches_existing_candidate_skills_and_links_document():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(
+        engine,
+        tables=[Candidate.__table__, ResumeDocument.__table__, CandidateResumeLink.__table__],
+    )
+    session_factory = sessionmaker(bind=engine)
+    db = session_factory()
+    try:
+        candidate = Candidate(
+            candidate_code="CAN-TEST-RESUME-SYNC",
+            first_name="Ananya",
+            last_name="Sen",
+            email="ananya.sen@example.com",
+            skills="SAP",
+            current_title="Software Engineer",
+        )
+        document = ResumeDocument(
+            doc_id="DOC-RES-TEST-SYNC",
+            original_filename="ananya_sap_resume.txt",
+            stored_filename="DOC-RES-TEST-SYNC_ananya_sap_resume.txt",
+            file_path="data/documents/resumes/ananya_sap_resume.txt",
+            file_extension=".txt",
+            mime_type="text/plain",
+            file_size_bytes=100,
+            sha256_hash="a" * 64,
+            raw_text=(
+                "Ananya Sen\n"
+                "Email: ananya.sen@example.com\n"
+                "SAP Security and GRC Consultant\n"
+                "SAP GRC Access Control, SAP Fiori, S/4HANA, PFCG, SU24\n"
+                "Support go-live and hypercare."
+            ),
+        )
+        new_candidate_document = ResumeDocument(
+            doc_id="DOC-RES-TEST-CREATE",
+            original_filename="meera_sap_resume.txt",
+            stored_filename="DOC-RES-TEST-CREATE_meera_sap_resume.txt",
+            file_path="data/documents/resumes/meera_sap_resume.txt",
+            file_extension=".txt",
+            mime_type="text/plain",
+            file_size_bytes=100,
+            sha256_hash="b" * 64,
+            raw_text=(
+                "Meera Iyer\n"
+                "Email: meera.iyer@example.com\n"
+                "SAP Security Consultant\n"
+                "SAP Security, SAP GRC"
+            ),
+        )
+        no_email_document = ResumeDocument(
+            doc_id="DOC-RES-TEST-NO-EMAIL",
+            original_filename="unknown_resume.txt",
+            stored_filename="DOC-RES-TEST-NO-EMAIL_unknown_resume.txt",
+            file_path="data/documents/resumes/unknown_resume.txt",
+            file_extension=".txt",
+            mime_type="text/plain",
+            file_size_bytes=100,
+            sha256_hash="c" * 64,
+            raw_text="Unknown Candidate\nSAP Security Consultant",
+        )
+        db.add_all([candidate, document, new_candidate_document, no_email_document])
+        db.commit()
+
+        result = sync_repository_resumes_to_candidates(db)
+        db.refresh(candidate)
+
+        assert result["candidates_created"] == 1
+        assert result["resume_links_created"] == 2
+        assert "SAP Security" in candidate.skills
+        assert "SAP GRC Access Control" in candidate.skills
+        assert "SAP Fiori" in candidate.skills
+        assert "Go" not in candidate.skills
+        assert candidate.resume_url == document.file_path
+        assert db.query(Candidate).filter_by(email="meera.iyer@example.com").count() == 1
+        assert db.query(Candidate).filter(Candidate.email.like("%unknown%")).count() == 0
+        assert db.query(CandidateResumeLink).filter_by(
+            candidate_id=candidate.id,
+            resume_doc_id=document.doc_id,
+        ).count() == 1
+        assert db.query(CandidateResumeLink).filter_by(
+            resume_doc_id=no_email_document.doc_id,
+        ).count() == 0
+    finally:
+        db.close()
+        engine.dispose()
 
 
 def test_experience_range_evaluation():

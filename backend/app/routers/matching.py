@@ -286,6 +286,7 @@ def get_matched_candidates(
             "current_company": cand.current_company,
             "total_experience_years": cand.total_experience_years,
             "location": cand.location or "Not specified",
+            "skills": cand.skills or "",
             "overall_score": m.overall_score,
             "segment": m.segment,
             "matched_skills": m_skills,

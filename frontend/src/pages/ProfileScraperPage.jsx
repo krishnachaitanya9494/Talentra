@@ -21,7 +21,17 @@ import {
   Sparkles,
   Edit2,
   Save,
+  Briefcase,
+  Users,
+  ChevronDown,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
+import {
+  getRepositoryJDs,
+  triggerMatchingRun,
+  getMatchedCandidates,
+} from '../services/api';
 
 /**
  * TALENTRA — Simplified Resume Data Extraction Workspace.
@@ -29,7 +39,7 @@ import {
  * Focuses purely on the 4-step workflow:
  * 1. Upload Resumes (PDF, DOCX, TXT — max 25/batch)
  * 2. Extract Candidate Details (Single primary action)
- * 3. Review Extracted Information (11 essential columns, zero fabricated data)
+ * 3. Review Extracted Information (Name, Phone, Mail ID, and Location)
  * 4. Download Excel (.xlsx) / CSV
  */
 export const ProfileScraperPage = () => {
@@ -52,6 +62,21 @@ export const ProfileScraperPage = () => {
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
+  const [jobDescriptions, setJobDescriptions] = useState([]);
+  const [selectedJdId, setSelectedJdId] = useState('');
+  const [loadingJobDescriptions, setLoadingJobDescriptions] = useState(true);
+  const [jobDescriptionError, setJobDescriptionError] = useState('');
+  const [matchingJd, setMatchingJd] = useState(false);
+  const [jdMatchRun, setJdMatchRun] = useState(null);
+  const [jdCandidateResults, setJdCandidateResults] = useState([]);
+  const [selectedJdCandidateIds, setSelectedJdCandidateIds] = useState(new Set());
+  const [jdCandidateSegmentFilter, setJdCandidateSegmentFilter] = useState('suitable');
+  const [jdCandidatePage, setJdCandidatePage] = useState(1);
+  const [jdDropdownOpen, setJdDropdownOpen] = useState(false);
+  const [jdSearchQuery, setJdSearchQuery] = useState('');
+  const [exportingJdCandidates, setExportingJdCandidates] = useState(false);
+  const jdDropdownRef = useRef(null);
+  const jdCandidatePageSize = 20;
 
   // --------------------------------------------------------------------------
   // STATE: Candidate Detail Side Drawer
@@ -60,6 +85,38 @@ export const ProfileScraperPage = () => {
   const [copiedField, setCopiedField] = useState(null);
   const [isEditingInDrawer, setIsEditingInDrawer] = useState(false);
   const [drawerEditForm, setDrawerEditForm] = useState({});
+
+  useEffect(() => {
+    let active = true;
+    const loadJobDescriptions = async () => {
+      try {
+        const result = await getRepositoryJDs({ page_size: 100 });
+        if (active) setJobDescriptions(result.items || []);
+      } catch (err) {
+        console.error('Failed to load job descriptions:', err);
+        if (active) {
+          setJobDescriptionError(err.response?.data?.detail || 'Could not load available job descriptions.');
+        }
+      } finally {
+        if (active) setLoadingJobDescriptions(false);
+      }
+    };
+    loadJobDescriptions();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!jdDropdownOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (jdDropdownRef.current && !jdDropdownRef.current.contains(event.target)) {
+        setJdDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [jdDropdownOpen]);
 
   // --------------------------------------------------------------------------
   // ESCAPE KEY HANDLER FOR DRAWER
@@ -287,6 +344,105 @@ export const ProfileScraperPage = () => {
     }
   };
 
+  const handleFindCandidatesForJd = async () => {
+    if (!selectedJdId) return;
+    setMatchingJd(true);
+    setJdMatchRun(null);
+    setJdCandidateResults([]);
+    setSelectedJdCandidateIds(new Set());
+    try {
+      const run = await triggerMatchingRun(Number(selectedJdId));
+      const firstPage = await getMatchedCandidates(run.run_id, {
+        page: 1,
+        page_size: 100,
+        role: 'recruiter',
+      });
+      const allMatches = [...(firstPage.items || [])];
+      const totalPages = firstPage.total_pages || 1;
+      for (let page = 2; page <= totalPages; page += 5) {
+        const pages = Array.from(
+          { length: Math.min(5, totalPages - page + 1) },
+          (_, index) => page + index
+        );
+        const results = await Promise.all(
+          pages.map((pageNumber) =>
+            getMatchedCandidates(run.run_id, {
+              page: pageNumber,
+              page_size: 100,
+              role: 'recruiter',
+            })
+          )
+        );
+        results.forEach((result) => allMatches.push(...(result.items || [])));
+      }
+      if (allMatches.length !== run.total_evaluated) {
+        throw new Error(`Expected ${run.total_evaluated} candidates but loaded ${allMatches.length}.`);
+      }
+      const suitableMatches = allMatches.filter((candidate) => candidate.segment !== 'Not Suitable');
+      setJdCandidateResults(allMatches);
+      setSelectedJdCandidateIds(new Set(suitableMatches.map((candidate) => candidate.candidate_id)));
+      setJdCandidateSegmentFilter('suitable');
+      setJdCandidatePage(1);
+      setJdMatchRun(run);
+    } catch (err) {
+      console.error('JD candidate matching failed:', err);
+      alert('Failed to find candidates for this JD: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setMatchingJd(false);
+    }
+  };
+
+  const handleDownloadJdCandidates = async (format) => {
+    if (!jdMatchRun || !selectedJdId || selectedJdCandidateIds.size === 0) return;
+    setExportingJdCandidates(true);
+    try {
+      const exportCandidates = jdCandidateResults
+        .filter((candidate) => selectedJdCandidateIds.has(candidate.candidate_id))
+        .map((candidate) => ({
+          name: candidate.candidate_name,
+          phone: candidate.phone,
+          email: candidate.email,
+          location: candidate.location,
+          skills: candidate.skills,
+          experience_years: candidate.total_experience_years,
+        }));
+      const jd = jobDescriptions.find((item) => item.id === Number(selectedJdId));
+      const jdTitle = jd?.original_filename || 'Selected Job Description';
+      const isExcel = format === 'excel';
+      const response = await axios.post(
+        `/api/v1/scraper/export-${isExcel ? 'excel' : 'csv'}`,
+        isExcel
+          ? {
+              candidates: exportCandidates,
+              single_sheet: true,
+              jd_title: jdTitle,
+              jd_id: selectedJdId,
+              include_match_details: true,
+            }
+          : { candidates: exportCandidates, include_match_details: true },
+        { responseType: 'blob' }
+      );
+      const blob = new Blob([response.data], {
+        type: isExcel
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'text/csv;charset=utf-8;',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `jd_${selectedJdId}_selected_candidates.${isExcel ? 'xlsx' : 'csv'}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('JD candidate export failed:', err);
+      alert('Failed to download JD candidates: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setExportingJdCandidates(false);
+    }
+  };
+
   // --------------------------------------------------------------------------
   // TABLE ROW SELECTION & SORTING
   // --------------------------------------------------------------------------
@@ -306,6 +462,29 @@ export const ProfileScraperPage = () => {
       } else {
         next.add(id);
       }
+      return next;
+    });
+  };
+
+  const toggleSelectAllJdCandidates = () => {
+    const visibleIds = filteredJdCandidateResults.map((candidate) => candidate.candidate_id);
+    const areAllFilteredSelected = visibleIds.length > 0
+      && visibleIds.every((candidateId) => selectedJdCandidateIds.has(candidateId));
+    setSelectedJdCandidateIds((previous) => {
+      const next = new Set(previous);
+      visibleIds.forEach((candidateId) => {
+        if (areAllFilteredSelected) next.delete(candidateId);
+        else next.add(candidateId);
+      });
+      return next;
+    });
+  };
+
+  const toggleSelectJdCandidate = (candidateId) => {
+    setSelectedJdCandidateIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(candidateId)) next.delete(candidateId);
+      else next.add(candidateId);
       return next;
     });
   };
@@ -334,17 +513,13 @@ export const ProfileScraperPage = () => {
       const q = searchQuery.toLowerCase();
       const name = (c.name || '').toLowerCase();
       const email = (c.email || '').toLowerCase();
-      const role = (c.current_role || '').toLowerCase();
-      const company = (c.current_company || '').toLowerCase();
+      const phone = (c.phone || '').toLowerCase();
       const loc = (c.location || '').toLowerCase();
-      const skillsStr = Array.isArray(c.skills) ? c.skills.join(' ').toLowerCase() : (c.skills || '').toLowerCase();
       return (
         name.includes(q) ||
         email.includes(q) ||
-        role.includes(q) ||
-        company.includes(q) ||
-        loc.includes(q) ||
-        skillsStr.includes(q)
+        phone.includes(q) ||
+        loc.includes(q)
       );
     })
     .sort((a, b) => {
@@ -362,6 +537,25 @@ export const ProfileScraperPage = () => {
       if (strA > strB) return sortOrder === 'asc' ? 1 : -1;
       return 0;
     });
+  const filteredJobDescriptions = jobDescriptions.filter((jd) => {
+    const query = jdSearchQuery.trim().toLowerCase();
+    return !query || `${jd.doc_id || ''} ${jd.original_filename || ''}`.toLowerCase().includes(query);
+  });
+  const selectedJobDescription = jobDescriptions.find(
+    (jd) => String(jd.id) === String(selectedJdId)
+  );
+  const filteredJdCandidateResults = jdCandidateResults.filter((candidate) => {
+    if (jdCandidateSegmentFilter === 'all') return true;
+    if (jdCandidateSegmentFilter === 'suitable') return candidate.segment !== 'Not Suitable';
+    return candidate.segment === jdCandidateSegmentFilter;
+  });
+  const areFilteredJdCandidatesSelected = filteredJdCandidateResults.length > 0
+    && filteredJdCandidateResults.every((candidate) => selectedJdCandidateIds.has(candidate.candidate_id));
+  const jdCandidatePageCount = Math.max(1, Math.ceil(filteredJdCandidateResults.length / jdCandidatePageSize));
+  const visibleJdCandidates = filteredJdCandidateResults.slice(
+    (jdCandidatePage - 1) * jdCandidatePageSize,
+    jdCandidatePage * jdCandidatePageSize
+  );
 
   // --------------------------------------------------------------------------
   // DRAWER HELPERS
@@ -427,6 +621,330 @@ export const ProfileScraperPage = () => {
           Upload multiple resumes and automatically extract candidate details into an Excel spreadsheet.
         </p>
       </div>
+
+      <section className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="p-2 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+            <Briefcase className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Find Candidates for a Job Description</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Review matched candidates and their resume skills before downloading the selected profiles.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 min-w-0" ref={jdDropdownRef}>
+            <button
+              type="button"
+              role="combobox"
+              aria-expanded={jdDropdownOpen}
+              aria-haspopup="listbox"
+              aria-controls="jd-selector-options"
+              onClick={() => setJdDropdownOpen((open) => !open)}
+              disabled={loadingJobDescriptions || jobDescriptions.length === 0 || matchingJd}
+              className="w-full min-h-[44px] flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-left text-sm font-medium text-slate-800 dark:text-slate-100 shadow-sm hover:border-blue-400 hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-60"
+            >
+              <span className="min-w-0">
+                <span className="block truncate">
+                  {loadingJobDescriptions
+                    ? 'Loading job descriptions...'
+                    : selectedJobDescription?.original_filename || 'Choose a job description'}
+                </span>
+                {selectedJobDescription?.doc_id && (
+                  <span className="block text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate">
+                    {selectedJobDescription.doc_id}
+                  </span>
+                )}
+              </span>
+              <ChevronDown className={`w-4 h-4 shrink-0 text-slate-500 transition-transform ${jdDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {jdDropdownOpen && (
+              <div
+                id="jd-selector-options"
+                role="listbox"
+                aria-label="Available job descriptions"
+                className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl"
+              >
+                <div className="relative p-2 border-b border-slate-100 dark:border-slate-700">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="search"
+                    value={jdSearchQuery}
+                    onChange={(event) => setJdSearchQuery(event.target.value)}
+                    placeholder="Search job descriptions..."
+                    aria-label="Search job descriptions"
+                    className="w-full py-2 pl-9 pr-3 rounded-lg bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto p-1.5">
+                  {filteredJobDescriptions.length ? filteredJobDescriptions.map((jd) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={String(jd.id) === String(selectedJdId)}
+                      key={jd.id}
+                      onClick={() => {
+                        setSelectedJdId(String(jd.id));
+                        setJdMatchRun(null);
+                        setJdCandidateResults([]);
+                        setSelectedJdCandidateIds(new Set());
+                        setJdSearchQuery('');
+                        setJdDropdownOpen(false);
+                      }}
+                      className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors ${
+                        String(jd.id) === String(selectedJdId)
+                          ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200'
+                          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold truncate">{jd.original_filename}</span>
+                      {jd.doc_id && (
+                        <span className="block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">{jd.doc_id}</span>
+                      )}
+                    </button>
+                  )) : (
+                    <p className="px-3 py-5 text-center text-xs text-slate-500 dark:text-slate-400">
+                      No job descriptions match that search.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleFindCandidatesForJd}
+            disabled={!selectedJdId || matchingJd || loadingJobDescriptions}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold disabled:opacity-50"
+          >
+            {matchingJd ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            {matchingJd ? 'Finding candidates...' : 'Find Candidates'}
+          </button>
+        </div>
+
+        {jobDescriptionError && (
+          <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{jobDescriptionError}</p>
+        )}
+        {!loadingJobDescriptions && !jobDescriptionError && jobDescriptions.length === 0 && (
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            No job descriptions are available yet. Upload a JD in the Job Descriptions workspace first.
+          </p>
+        )}
+
+        {jdMatchRun && (
+          <div className="mt-4 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                <Users className="w-4 h-4 text-blue-600" />
+                {jdMatchRun.total_evaluated} candidate profiles evaluated
+              </span>
+              <span className="text-emerald-700 dark:text-emerald-400">
+                {jdMatchRun.strong_matches} strong
+              </span>
+              <span className="text-blue-700 dark:text-blue-400">
+                {jdMatchRun.potential_matches} potential
+              </span>
+              <span className="text-amber-700 dark:text-amber-400">
+                {jdMatchRun.partial_matches} partial
+              </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {jdMatchRun.not_suitable} not suitable
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                {selectedJdCandidateIds.size} of {jdCandidateResults.length} selected
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDownloadJdCandidates('excel')}
+                disabled={exportingJdCandidates || selectedJdCandidateIds.size === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-50"
+              >
+                {exportingJdCandidates ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+                Download Selected Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDownloadJdCandidates('csv')}
+                disabled={exportingJdCandidates || selectedJdCandidateIds.size === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold disabled:opacity-50"
+              >
+                {exportingJdCandidates ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                Download Selected CSV
+              </button>
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 bg-white dark:bg-slate-900">
+              <div>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100">Verify matched candidates</h3>
+                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  Review resume skills and experience, then deselect anyone you do not want to include.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Match category
+                  <select
+                    value={jdCandidateSegmentFilter}
+                    onChange={(event) => {
+                      setJdCandidateSegmentFilter(event.target.value);
+                      setJdCandidatePage(1);
+                    }}
+                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:ring-blue-900"
+                    aria-label="Filter candidates by match category"
+                  >
+                    <option value="suitable">
+                      Suitable matches ({jdMatchRun.strong_matches + jdMatchRun.potential_matches + jdMatchRun.partial_matches})
+                    </option>
+                    <option value="all">All categories ({jdMatchRun.total_evaluated})</option>
+                    <option value="Strong Match">Strong ({jdMatchRun.strong_matches})</option>
+                    <option value="Potential Match">Potential ({jdMatchRun.potential_matches})</option>
+                    <option value="Partial Match">Partial ({jdMatchRun.partial_matches})</option>
+                    <option value="Not Suitable">Not Suitable ({jdMatchRun.not_suitable})</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={toggleSelectAllJdCandidates}
+                  disabled={filteredJdCandidateResults.length === 0}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 disabled:opacity-50"
+                >
+                  {areFilteredJdCandidatesSelected
+                    ? <CheckSquare className="w-4 h-4" />
+                    : <Square className="w-4 h-4" />}
+                  {areFilteredJdCandidatesSelected ? 'Deselect filter' : 'Select all in filter'}
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-800/80 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all candidates in the current filter"
+                        checked={areFilteredJdCandidatesSelected}
+                        onChange={toggleSelectAllJdCandidates}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
+                    <th className="px-4 py-3 font-semibold">Candidate</th>
+                    <th className="px-4 py-3 font-semibold">Resume Skills</th>
+                    <th className="px-4 py-3 font-semibold">Location</th>
+                    <th className="px-4 py-3 font-semibold">Experience</th>
+                    <th className="px-4 py-3 font-semibold">JD Match</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredJdCandidateResults.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                        {jdMatchRun.total_evaluated === 0
+                          ? 'No candidate profiles are available in the talent pool.'
+                          : jdCandidateSegmentFilter === 'suitable'
+                            ? "No suitable candidates found. Current profiles do not meet this JD's required skills."
+                            : `No candidates in ${jdCandidateSegmentFilter === 'all' ? 'any match category' : jdCandidateSegmentFilter}.`}
+                      </td>
+                    </tr>
+                  ) : visibleJdCandidates.map((candidate) => {
+                    const skills = Array.isArray(candidate.skills)
+                      ? candidate.skills
+                      : String(candidate.skills || '').split(/[,;|/\n]+/).map((skill) => skill.trim()).filter(Boolean);
+                    return (
+                      <tr
+                        key={candidate.candidate_id}
+                        className={`hover:bg-blue-50/50 dark:hover:bg-blue-950/20 ${
+                          selectedJdCandidateIds.has(candidate.candidate_id) ? 'bg-blue-50/30 dark:bg-blue-950/10' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${candidate.candidate_name}`}
+                            checked={selectedJdCandidateIds.has(candidate.candidate_id)}
+                            onChange={() => toggleSelectJdCandidate(candidate.candidate_id)}
+                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                          {candidate.candidate_name}
+                        </td>
+                        <td className="px-4 py-3">
+                          {skills.length ? (
+                            <div className="flex max-w-[360px] flex-wrap gap-1">
+                              {skills.slice(0, 6).map((skill, index) => (
+                                <span key={`${candidate.candidate_id}-${index}`} className="rounded-md bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200">
+                                  {skill}
+                                </span>
+                              ))}
+                              {skills.length > 6 && (
+                                <span title={skills.slice(6).join(', ')} className="px-1 text-[10px] text-slate-500">
+                                  +{skills.length - 6} more
+                                </span>
+                              )}
+                            </div>
+                          ) : <span className="text-slate-400">Not provided</span>}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                          {candidate.location || 'Not provided'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                          {candidate.total_experience_years !== null && candidate.total_experience_years !== undefined
+                            ? `${candidate.total_experience_years} years`
+                            : 'Not provided'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="font-semibold text-slate-800 dark:text-slate-100">
+                            {candidate.overall_score}%
+                          </span>
+                          <span className="ml-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                            {candidate.segment}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {filteredJdCandidateResults.length > jdCandidatePageSize && (
+              <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs text-slate-500 dark:text-slate-400">
+                <span>
+                  Showing {(jdCandidatePage - 1) * jdCandidatePageSize + 1}-
+                  {Math.min(jdCandidatePage * jdCandidatePageSize, filteredJdCandidateResults.length)} of {filteredJdCandidateResults.length}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setJdCandidatePage((page) => Math.max(1, page - 1))}
+                    disabled={jdCandidatePage === 1}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setJdCandidatePage((page) => Math.min(jdCandidatePageCount, page + 1))}
+                    disabled={jdCandidatePage === jdCandidatePageCount}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1 disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          </div>
+        )}
+      </section>
 
       {/* ------------------------------------------------------------------ */}
       {/* B. SIMPLE RESUME UPLOAD AREA                                       */}
@@ -576,7 +1094,7 @@ export const ProfileScraperPage = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search candidates, skills, company, location..."
+                placeholder="Search candidate name, phone, mail ID, or location..."
                 className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
@@ -663,44 +1181,11 @@ export const ProfileScraperPage = () => {
                   {/* 2. Phone Number */}
                   <th className="p-3 min-w-[120px]">Phone Number</th>
 
-                  {/* 3. Email Address */}
-                  <th className="p-3 min-w-[150px]">Email Address</th>
+                  {/* 3. Mail ID */}
+                  <th className="p-3 min-w-[150px]">Mail ID</th>
 
-                  {/* 4. Current Location */}
-                  <th className="p-3 min-w-[120px]">Current Location</th>
-
-                  {/* 5. Current Designation */}
-                  <th className="p-3 min-w-[130px]">Current Designation</th>
-
-                  {/* 6. Current Company */}
-                  <th className="p-3 min-w-[130px]">Current Company</th>
-
-                  {/* 7. Total Experience */}
-                  <th
-                    onClick={() => handleSort('experience_years')}
-                    className="p-3 min-w-[90px] cursor-pointer hover:text-slate-900 dark:hover:text-white text-center"
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      <span>Experience</span>
-                      {sortField === 'experience_years' ? (
-                        sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 text-emerald-600" /> : <ArrowDown className="w-3 h-3 text-emerald-600" />
-                      ) : (
-                        <ArrowUpDown className="w-3 h-3 text-slate-300" />
-                      )}
-                    </div>
-                  </th>
-
-                  {/* 8. Technical Skills */}
-                  <th className="p-3 min-w-[160px]">Technical Skills</th>
-
-                  {/* 9. Notice Period */}
-                  <th className="p-3 min-w-[90px] text-center">Notice Period</th>
-
-                  {/* 10. Education */}
-                  <th className="p-3 min-w-[110px]">Education</th>
-
-                  {/* 11. Extraction Status */}
-                  <th className="p-3 min-w-[100px] text-center">Status</th>
+                  {/* 4. Location */}
+                  <th className="p-3 min-w-[120px]">Location</th>
 
                   {/* Inspect Action */}
                   <th className="p-3 w-16 text-center">Inspect</th>
@@ -710,15 +1195,13 @@ export const ProfileScraperPage = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredCandidates.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="p-8 text-center text-slate-400">
+                    <td colSpan={7} className="p-8 text-center text-slate-400">
                       No candidate records found matching "{searchQuery}".
                     </td>
                   </tr>
                 ) : (
                   filteredCandidates.map((c, idx) => {
                     const isSelected = selectedIds.has(c.id);
-                    const skillsArray = Array.isArray(c.skills) ? c.skills : c.skills ? [c.skills] : [];
-
                     return (
                       <tr
                         key={c.id || idx}
@@ -771,7 +1254,7 @@ export const ProfileScraperPage = () => {
                           )}
                         </td>
 
-                        {/* 3. Email Address */}
+                        {/* 3. Mail ID */}
                         <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
                           {c.email ? (
                             <span className="flex items-center gap-1 group">
@@ -793,76 +1276,9 @@ export const ProfileScraperPage = () => {
                           )}
                         </td>
 
-                        {/* 4. Current Location */}
+                        {/* 4. Location */}
                         <td className="p-3 text-slate-700 dark:text-slate-300">
                           {c.location || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                        </td>
-
-                        {/* 5. Current Designation */}
-                        <td className="p-3 text-slate-800 dark:text-slate-200 font-medium">
-                          {c.current_role || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                        </td>
-
-                        {/* 6. Current Company */}
-                        <td className="p-3 text-slate-700 dark:text-slate-300">
-                          {c.current_company || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                        </td>
-
-                        {/* 7. Total Experience */}
-                        <td className="p-3 text-center font-medium text-slate-800 dark:text-slate-200">
-                          {c.experience_years !== null && c.experience_years !== undefined ? (
-                            `${c.experience_years} y`
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600">—</span>
-                          )}
-                        </td>
-
-                        {/* 8. Technical Skills */}
-                        <td className="p-3">
-                          {skillsArray.length > 0 ? (
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {skillsArray.slice(0, 3).map((sk, sIdx) => (
-                                <span
-                                  key={sIdx}
-                                  className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px]"
-                                >
-                                  {sk}
-                                </span>
-                              ))}
-                              {skillsArray.length > 3 && (
-                                <span className="text-[10px] text-slate-400 font-medium">
-                                  +{skillsArray.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600">—</span>
-                          )}
-                        </td>
-
-                        {/* 9. Notice Period */}
-                        <td className="p-3 text-center text-slate-700 dark:text-slate-300">
-                          {c.notice_period || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                        </td>
-
-                        {/* 10. Education */}
-                        <td className="p-3 text-slate-700 dark:text-slate-300 truncate max-w-[120px]">
-                          {c.education || <span className="text-slate-300 dark:text-slate-600">—</span>}
-                        </td>
-
-                        {/* 11. Extraction Status */}
-                        <td className="p-3 text-center">
-                          <span
-                            className={`px-2 py-0.5 text-[10px] font-semibold rounded-md ${
-                              c.extraction_status === 'Validated'
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                : c.extraction_status === 'Needs Review'
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                            }`}
-                          >
-                            {c.extraction_status || 'Validated'}
-                          </span>
                         </td>
 
                         {/* Inspect Eye Button */}

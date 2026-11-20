@@ -84,6 +84,25 @@ class MatchingEngine:
                 cand_skills.add(canon.lower())
                 cand_skills.add(clean_s.lower())
 
+        sap_context_skills = {
+            "sap security",
+            "sap grc",
+            "sap grc access control",
+        }
+        has_sap_context = bool(cand_skills.intersection(sap_context_skills))
+        contextual_sap_acronyms = {"ara", "arm", "brm", "eam"}
+
+        def matches_skill(target: str) -> bool:
+            target_lower = target.lower().strip()
+            target_canon = canonicalize_skill(target).lower()
+            if target_canon in contextual_sap_acronyms and not has_sap_context:
+                return False
+            return (
+                target_lower in cand_skills
+                or target_canon in cand_skills
+                or any(target_canon in candidate_skill for candidate_skill in cand_skills)
+            )
+
         req_skills_list = jd_spec.get("required_skills_list") or []
         if not req_skills_list and jd_spec.get("required_skills"):
             req_skills_list = [s.strip() for s in jd_spec["required_skills"].split(",") if s.strip()]
@@ -93,10 +112,7 @@ class MatchingEngine:
 
         if req_skills_list:
             for req in req_skills_list:
-                req_lower = req.lower().strip()
-                req_canon = canonicalize_skill(req).lower()
-                # Check for direct or canonical overlap
-                if req_lower in cand_skills or req_canon in cand_skills or any(req_canon in cs for cs in cand_skills):
+                if matches_skill(req):
                     matched_req_skills.append(req)
                 else:
                     missing_req_skills.append(req)
@@ -104,11 +120,13 @@ class MatchingEngine:
             skills_match_ratio = len(matched_req_skills) / len(req_skills_list)
             skills_score = round(skills_match_ratio * 100.0, 1)
 
-            if len(matched_req_skills) == 0 and len(req_skills_list) >= 2:
-                # 0 required skills found for a requirement with 2+ required skills
+            if not matched_req_skills:
                 has_critical_mismatch = True
                 ev_status = "confirmed_mismatch"
-                ev_text = f"Candidate lacks all {len(req_skills_list)} mandatory required skills: {', '.join(req_skills_list[:6])}"
+                ev_text = (
+                    f"Candidate lacks all {len(req_skills_list)} mandatory required skills: "
+                    f"{', '.join(req_skills_list[:6])}"
+                )
             elif len(missing_req_skills) == 0:
                 ev_status = "confirmed_match"
                 ev_text = f"Matched all {len(matched_req_skills)} required skills: {', '.join(matched_req_skills)}"
@@ -137,9 +155,7 @@ class MatchingEngine:
         matched_pref_skills = []
         if pref_skills_list:
             for pref in pref_skills_list:
-                p_lower = pref.lower().strip()
-                p_canon = canonicalize_skill(pref).lower()
-                if p_lower in cand_skills or p_canon in cand_skills or any(p_canon in cs for cs in cand_skills):
+                if matches_skill(pref):
                     matched_pref_skills.append(pref)
             pref_ratio = len(matched_pref_skills) / len(pref_skills_list)
             pref_score = round(pref_ratio * 100.0, 1)
@@ -429,7 +445,26 @@ class MatchingEngine:
 
         # Load or extract structured parsed JD requirements
         parsed_jd = db.query(ParsedJobRequirement).filter(ParsedJobRequirement.jd_doc_id == jd_doc.doc_id).first()
-        if parsed_jd:
+        import os
+        from backend.app.services.extraction.jd_parser import JobDescriptionParser
+
+        raw_text = jd_doc.raw_text or ""
+        if not raw_text and jd_doc.file_path and os.path.exists(jd_doc.file_path):
+            ext = (jd_doc.file_extension or "").lower()
+            try:
+                if ext == ".pdf":
+                    from backend.app.services.extraction.pdf_extractor import extract_text_from_pdf
+                    raw_text = extract_text_from_pdf(jd_doc.file_path)
+                elif ext in (".docx", ".doc"):
+                    from backend.app.services.extraction.docx_extractor import extract_text_from_docx
+                    raw_text = extract_text_from_docx(jd_doc.file_path)
+                else:
+                    from backend.app.services.extraction.txt_extractor import extract_text_from_txt
+                    raw_text = extract_text_from_txt(jd_doc.file_path)
+            except Exception:
+                pass
+
+        if parsed_jd and (parsed_jd.is_manually_corrected or not raw_text):
             req_list = [s.strip() for s in (parsed_jd.required_skills or "").split(",") if s.strip()]
             pref_list = [s.strip() for s in (parsed_jd.preferred_skills or "").split(",") if s.strip()]
             jd_spec = {
@@ -446,27 +481,12 @@ class MatchingEngine:
                 "work_mode": parsed_jd.work_mode,
             }
         else:
-            # Fallback: parse raw JD text from jd_doc.raw_text or disk path
-            import os
-            from backend.app.services.extraction.jd_parser import JobDescriptionParser
-            
-            raw_text = jd_doc.raw_text or ""
-            if not raw_text and jd_doc.file_path and os.path.exists(jd_doc.file_path):
-                ext = (jd_doc.file_extension or "").lower()
-                try:
-                    if ext == ".pdf":
-                        from backend.app.services.extraction.pdf_extractor import extract_text_from_pdf
-                        raw_text = extract_text_from_pdf(jd_doc.file_path)
-                    elif ext in (".docx", ".doc"):
-                        from backend.app.services.extraction.docx_extractor import extract_text_from_docx
-                        raw_text = extract_text_from_docx(jd_doc.file_path)
-                    else:
-                        from backend.app.services.extraction.txt_extractor import extract_text_from_txt
-                        raw_text = extract_text_from_txt(jd_doc.file_path)
-                except Exception:
-                    pass
             parsed = JobDescriptionParser.parse(raw_text or jd_doc.original_filename, filename=jd_doc.original_filename, jd_doc_id=jd_doc.doc_id)
             jd_spec = parsed
+
+        from backend.app.services.resume_repository_sync import sync_repository_resumes_to_candidates
+
+        sync_repository_resumes_to_candidates(db)
 
         # Fetch all active candidates
         candidates = db.query(Candidate).all()

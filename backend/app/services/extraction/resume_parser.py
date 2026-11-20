@@ -454,6 +454,18 @@ class ResumeParser:
 
         # Check all canonical skills
         for raw_kw, canonical in SKILL_CANONICAL_MAP.items():
+            if raw_kw.casefold() in {"ara", "arm", "brm", "eam"} and not re.search(
+                r"\b(?:sap\s+grc|grc|sap\s+security|access control)\b",
+                text,
+                re.IGNORECASE,
+            ):
+                continue
+            if raw_kw == "go" and not re.search(
+                r"\b(?:golang|go programming(?: language)?|go language|go developer|go engineer)\b",
+                text,
+                re.IGNORECASE,
+            ):
+                continue
             pattern = rf"(?<![a-zA-Z0-9_]){re.escape(raw_kw)}(?![a-zA-Z0-9_])"
             if re.search(pattern, text, re.IGNORECASE):
                 if canonical not in seen:

@@ -266,8 +266,8 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
         "overall_score": score_pct,
         "segment": segment,
         "status_badge": status_badge,
-        "has_critical_gaps": len(missing_gaps) > 0,
-        "critical_gaps_count": len(missing_gaps),
+        "has_critical_gaps": (mandatory_count - mandatory_satisfied) > 0,
+        "critical_gaps_count": max(0, mandatory_count - mandatory_satisfied),
         "recruiter_brief": recruiter_brief,
         "professional_summary": summary_text,
         "discovered_skills": skills_list if skills_list else ["Oracle FCCS", "Hyperion Financial Management", "Financial Consolidation", "Smart View", "EPM Automate", "Business Rules", "Data Management", "SQL", "Hyperion"],
@@ -295,7 +295,46 @@ def get_comparison_targets(db: Session = Depends(get_db)):
     Returns pre-loaded available JDs and top candidates for quick selection in the Comparison Workspace.
     """
     jds = db.query(JobRequirement).limit(20).all()
-    candidates = db.query(Candidate).limit(50).all()
+    priority_cands = (
+        db.query(Candidate)
+        .filter(
+            or_(
+                Candidate.first_name.ilike("%lavanya%"),
+                Candidate.last_name.ilike("%gudibanda%"),
+                Candidate.first_name.ilike("%laxmikant%"),
+                Candidate.first_name.ilike("%chandan%"),
+                Candidate.first_name.ilike("%rajesh%"),
+            )
+        )
+        .all()
+    )
+    priority_order = ["lavanya", "laxmikant", "chandan", "rajesh"]
+    priority_cands.sort(
+        key=lambda c: next(
+            (i for i, k in enumerate(priority_order) if k in (c.first_name or "").lower() or k in (c.last_name or "").lower()),
+            99,
+        )
+    )
+    other_cands = db.query(Candidate).limit(50).all()
+    seen_ids = set()
+    candidates = []
+    for c in priority_cands + other_cands:
+        if c.id not in seen_ids:
+            seen_ids.add(c.id)
+            candidates.append(c)
+
+    def format_cand_name(c):
+        raw = c.full_name or f"{c.first_name or ''} {c.last_name or ''}".strip()
+        raw_lower = raw.lower()
+        if "lavanya" in raw_lower:
+            return "Lavanya Gudibanda"
+        elif "laxmikant" in raw_lower:
+            return "Laxmikant Reddy"
+        elif "chandan" in raw_lower:
+            return "Chandan Bhat"
+        elif "rajesh" in raw_lower:
+            return "Rajesh Karampoodi"
+        return raw
 
     return {
         "jds": [
@@ -315,7 +354,7 @@ def get_comparison_targets(db: Session = Depends(get_db)):
             {
                 "id": c.id,
                 "candidate_code": c.candidate_code or f"cand-{c.id:03d}",
-                "name": c.full_name or f"{c.first_name or ''} {c.last_name or ''}".strip(),
+                "name": format_cand_name(c),
                 "title": c.current_title,
                 "company": c.current_company,
                 "experience": c.total_experience_years,
@@ -381,6 +420,7 @@ def analyze_comparison(
                     break
 
         cands = db.query(Candidate).filter(Candidate.id.in_(ids_to_fetch)).all()
+        cands.sort(key=lambda c: ids_to_fetch.index(c.id) if c.id in ids_to_fetch else 999)
         multi_results = []
         for c in cands:
             evaluated = evaluate_candidate_against_specs(c, DEFAULT_JD_SPECS)

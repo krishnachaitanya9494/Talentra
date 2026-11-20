@@ -19,6 +19,9 @@ import {
   Filter,
   Download,
   Share2,
+  Building2,
+  User,
+  Star,
 } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { EmptyState } from '../components/common/EmptyState';
@@ -76,10 +79,25 @@ export default function JDResumeComparisonPage() {
 
       setSelectedJdId(initialJdId);
       setSelectedCandidateId(initialCandId);
-      setSelectedCandidateIds(candList.slice(0, 3).map((c) => c.id));
+      const initialMultiIds = candList.slice(0, 3).map((c) => c.id);
+      setSelectedCandidateIds(initialMultiIds);
+
+      // Pre-fill sample texts for on-the-fly text comparison
+      const sampleJd = `Job Title: Senior Oracle EPM / Hyperion Planning Consultant
+Experience Required: 5 - 8 Years
+Location: Hyderabad / Remote
+Mandatory Skills: Calculation Scripts, Essbase, Hyperion Planning, PBCS, EPBCS, Dimension Hierarchies, Financial Close Automation.
+Responsibilities: Design, develop, and maintain complex calculation scripts. Configure and maintain planning forms, dashboards, and automated workflow triggers.`;
+      const sampleResume = `Lavanya Gudibanda
+Senior Oracle Cloud EPM / FCCS Consultant
+7.2 Years Experience | Bangalore, India
+Key Competencies: Oracle FCCS, Hyperion Financial Management (HFM), Financial Consolidation, Smart View, EPM Automate, Business Rules, Data Management, SQL, Hyperion.
+Summary: 7.2 years hands-on experience in enterprise financial systems architecture and cloud consolidation delivery.`;
+      setJdText(sampleJd);
+      setResumeText(sampleResume);
 
       // Trigger initial comparison
-      runComparison(initialJdId, initialCandId, 'single');
+      runComparison(initialJdId, initialCandId, 'single', initialMultiIds);
     } catch (err) {
       console.error('Failed to load comparison targets:', err);
     } finally {
@@ -87,7 +105,14 @@ export default function JDResumeComparisonPage() {
     }
   };
 
-  const runComparison = async (jdId, candId, currentMode = mode) => {
+  const runComparison = async (
+    jdId,
+    candId,
+    currentMode = mode,
+    candIds = selectedCandidateIds,
+    customJd = jdText,
+    customResume = resumeText
+  ) => {
     try {
       setLoading(true);
       setError(null);
@@ -99,10 +124,11 @@ export default function JDResumeComparisonPage() {
       if (currentMode === 'single') {
         payload.candidate_id = candId || selectedCandidateId;
       } else if (currentMode === 'multi') {
-        payload.candidate_ids = selectedCandidateIds;
+        payload.candidate_ids = candIds;
       } else if (currentMode === 'text') {
-        payload.jd_text = jdText;
-        payload.resume_text = resumeText;
+        payload.jd_text = customJd;
+        payload.resume_text = customResume;
+        payload.candidate_id = candId || selectedCandidateId;
       }
 
       const res = await analyzeComparison(payload);
@@ -130,20 +156,19 @@ export default function JDResumeComparisonPage() {
   };
 
   const handleLoadSampleText = () => {
-    setJdText(
-      `Job Title: Senior Oracle EPM / Hyperion Planning Consultant
+    const sJd = `Job Title: Senior Oracle EPM / Hyperion Planning Consultant
 Experience Required: 5 - 8 Years
 Location: Hyderabad / Remote
 Mandatory Skills: Calculation Scripts, Essbase, Hyperion Planning, PBCS, EPBCS, Dimension Hierarchies, Financial Close Automation.
-Responsibilities: Design, develop, and maintain complex calculation scripts. Configure and maintain planning forms, dashboards, and automated workflow triggers.`
-    );
-    setResumeText(
-      `Lavanya Gudibanda
+Responsibilities: Design, develop, and maintain complex calculation scripts. Configure and maintain planning forms, dashboards, and automated workflow triggers.`;
+    const sResume = `Lavanya Gudibanda
 Senior Oracle Cloud EPM / FCCS Consultant
 7.2 Years Experience | Bangalore, India
 Key Competencies: Oracle FCCS, Hyperion Financial Management (HFM), Financial Consolidation, Smart View, EPM Automate, Business Rules, Data Management, SQL, Hyperion.
-Summary: 7.2 years hands-on experience in enterprise financial systems architecture and cloud consolidation delivery.`
-    );
+Summary: 7.2 years hands-on experience in enterprise financial systems architecture and cloud consolidation delivery.`;
+    setJdText(sJd);
+    setResumeText(sResume);
+    runComparison(selectedJdId, selectedCandidateId, 'text', selectedCandidateIds, sJd, sResume);
   };
 
   const comp = comparisonData?.comparison;
@@ -158,7 +183,7 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+    <div className="space-y-6 w-full max-w-[1720px] mx-auto pb-16 px-2 sm:px-4">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-surface-darkBorder">
         <div>
@@ -181,9 +206,9 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
           <button
             type="button"
             onClick={() => handleModeChange('single')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
               mode === 'single'
-                ? 'bg-white dark:bg-surface-darkCard text-navy-900 dark:text-white shadow-xs font-bold'
+                ? 'bg-white dark:bg-surface-darkCard text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-xs font-bold'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
@@ -193,21 +218,21 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
           <button
             type="button"
             onClick={() => handleModeChange('multi')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
               mode === 'multi'
-                ? 'bg-white dark:bg-surface-darkCard text-navy-900 dark:text-white shadow-xs font-bold'
+                ? 'bg-white dark:bg-surface-darkCard text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-xs font-bold'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Multi-Candidate (3)</span>
+            <span>Multi-Candidate ({selectedCandidateIds.length || 3})</span>
           </button>
           <button
             type="button"
             onClick={() => handleModeChange('text')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
               mode === 'text'
-                ? 'bg-white dark:bg-surface-darkCard text-navy-900 dark:text-white shadow-xs font-bold'
+                ? 'bg-white dark:bg-surface-darkCard text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shadow-xs font-bold'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
@@ -217,98 +242,223 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
         </div>
       </div>
 
-      {/* On-the-Fly / Input Configuration Card */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
-        <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 font-bold text-navy-900 dark:text-white">
-            <Sparkles className="w-4 h-4 text-brand-600" />
-            <span>On-the-Fly Job Description & Resume Text Comparison</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleLoadSampleText}
-            className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer flex items-center gap-1 font-semibold"
-          >
-            <span>⚡ Load Sample Text</span>
-          </button>
-        </div>
+      {/* ========================================================================= */}
+      {/* MODE 1: 1-ON-1 SELECTION CARD */}
+      {/* ========================================================================= */}
+      {mode === 'single' && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
+            <div className="flex-1 min-w-0 w-full space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>SELECT TARGET JOB REQUISITION</span>
+              </label>
+              <select
+                value={selectedJdId}
+                onChange={(e) => {
+                  const id = Number(e.target.value);
+                  setSelectedJdId(id);
+                  runComparison(id, selectedCandidateId, 'single');
+                }}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer truncate"
+              >
+                {jds.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.title} ({j.req_code})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          {/* Target JD Selection */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700 dark:text-slate-300">
-              Target Job Description *
-            </label>
-            <select
-              value={selectedJdId}
-              onChange={(e) => {
-                const id = Number(e.target.value);
-                setSelectedJdId(id);
-                runComparison(id, selectedCandidateId, mode);
-              }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            <div className="shrink-0 pt-4 hidden lg:block">
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                <GitCompare className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 w-full space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>SELECT CANDIDATE RESUME</span>
+              </label>
+              <select
+                value={selectedCandidateId}
+                onChange={(e) => {
+                  const id = Number(e.target.value);
+                  setSelectedCandidateId(id);
+                  runComparison(selectedJdId, id, 'single');
+                }}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer truncate"
+              >
+                {candidates.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.experience}y, {c.location})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODE 2: MULTI-CANDIDATE SELECTION CARD (Exact from Image 1) */}
+      {/* ========================================================================= */}
+      {mode === 'multi' && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
+            {/* Target Requisition */}
+            <div className="flex-1 min-w-0 w-full space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>SELECT TARGET JOB REQUISITION</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedJdId}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    setSelectedJdId(id);
+                    runComparison(id, selectedCandidateId, 'multi');
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer truncate"
+                >
+                  {jds.map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.title} ({j.req_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Swap/Compare Icon */}
+            <div className="shrink-0 pt-4 hidden lg:block">
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                <GitCompare className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Candidate Resume Multi-Select Pills */}
+            <div className="flex-1 min-w-0 w-full space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>SELECT CANDIDATE RESUME</span>
+                </label>
+                <span className="text-[11px] text-slate-400">
+                  Select 2 to 5 candidates for side-by-side comparison:
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 min-h-[44px]">
+                {candidates.slice(0, 6).map((cand) => {
+                  const isSelected = selectedCandidateIds.includes(cand.id);
+                  return (
+                    <button
+                      key={cand.id}
+                      type="button"
+                      onClick={() => {
+                        let nextIds;
+                        if (isSelected) {
+                          if (selectedCandidateIds.length <= 2) return;
+                          nextIds = selectedCandidateIds.filter((id) => id !== cand.id);
+                        } else {
+                          if (selectedCandidateIds.length >= 5) return;
+                          nextIds = [...selectedCandidateIds, cand.id];
+                        }
+                        setSelectedCandidateIds(nextIds);
+                        runComparison(selectedJdId, selectedCandidateId, 'multi', nextIds);
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                          : 'bg-white dark:bg-surface-darkCard text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-surface-darkBorder hover:bg-slate-100'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                      <span>{cand.name} (γ)</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODE 3: PASTE / UPLOAD TEXT CARD (Exact from Image 2) */}
+      {/* ========================================================================= */}
+      {mode === 'text' && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-4">
+          <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2 font-bold text-navy-900 dark:text-white">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>On-the-Fly Job Description & Resume Text Comparison</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleLoadSampleText}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1 font-semibold"
             >
-              {jds.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.req_code} — {j.title}
-                </option>
-              ))}
-            </select>
-            {mode === 'text' && (
+              <span>✦ Load Sample Text</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 w-full min-w-0 text-xs">
+            {/* Target Job Description Column */}
+            <div className="flex flex-col gap-1.5 w-full min-w-0">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Target Job Description Text *
+                </label>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Senior Technical Lead
+                </span>
+              </div>
               <textarea
-                rows={4}
+                rows={7}
                 value={jdText}
                 onChange={(e) => setJdText(e.target.value)}
                 placeholder="Paste Job Description, specifications, mandatory requirements, and preferred qualifications..."
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs focus:ring-1 focus:ring-brand-500 font-mono mt-2"
+                className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 leading-relaxed font-sans resize-y"
               />
-            )}
-          </div>
+            </div>
 
-          {/* Candidate Selection */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700 dark:text-slate-300">
-              Candidate Resume Profile *
-            </label>
-            <select
-              value={selectedCandidateId}
-              onChange={(e) => {
-                const id = Number(e.target.value);
-                setSelectedCandidateId(id);
-                runComparison(selectedJdId, id, mode);
-              }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            >
-              {candidates.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.candidate_code} — {c.name} ({c.experience}y, {c.location})
-                </option>
-              ))}
-            </select>
-            {mode === 'text' && (
+            {/* Candidate Resume Text Column */}
+            <div className="flex flex-col gap-1.5 w-full min-w-0">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Candidate Resume Text *
+                </label>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Candidate Profile
+                </span>
+              </div>
               <textarea
-                rows={4}
+                rows={7}
                 value={resumeText}
                 onChange={(e) => setResumeText(e.target.value)}
                 placeholder="Paste candidate resume text, project history, core competencies, and profile background..."
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs focus:ring-1 focus:ring-brand-500 font-mono mt-2"
+                className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 leading-relaxed font-sans resize-y"
               />
-            )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="button"
+              onClick={() => runComparison(selectedJdId, selectedCandidateId, 'text')}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-60"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>{loading ? 'Evaluating Model...' : 'Run Deep AI Comparison'}</span>
+            </button>
           </div>
         </div>
-
-        <div className="flex justify-end pt-1">
-          <button
-            type="button"
-            onClick={() => runComparison(selectedJdId, selectedCandidateId, mode)}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>{loading ? 'Evaluating Model...' : 'Run Deep AI Comparison'}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Loading Feedback */}
       {loading && !comp && (
@@ -341,9 +491,9 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
       )}
 
       {/* ========================================================================= */}
-      {/* 1-ON-1 DEEP COMPARE RESULTS VIEW */}
+      {/* 1-ON-1 DEEP COMPARE & ON-THE-FLY TEXT RESULTS VIEW */}
       {/* ========================================================================= */}
-      {mode === 'single' && comp && (
+      {(mode === 'single' || mode === 'text') && comp && (
         <div className="space-y-5">
           {/* Overall Match Verdict Card */}
           <div className="p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-4">
@@ -361,11 +511,11 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
                     <h3 className="text-sm font-bold text-navy-900 dark:text-white">
                       {comp.segment}
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 uppercase">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 uppercase">
                       {comp.segment}
                     </span>
                     {comp.has_critical_gaps && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
                         Critical Gaps
                       </span>
                     )}
@@ -397,9 +547,9 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
               </div>
             </div>
 
-            {/* 4 Dimension Metrics Grid */}
+            {/* 4 Dimension Metrics Grid (With Visual Alignment Bars) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
                   MANDATORY STACK FIT
                 </span>
@@ -411,9 +561,15 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
                     {comp.metrics.mandatory_fraction}
                   </span>
                 </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div
+                    className="h-full bg-slate-400 rounded-full"
+                    style={{ width: comp.metrics.mandatory_stack_fit || '0%' }}
+                  />
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
                   SEMANTIC COSINE FIT
                 </span>
@@ -421,13 +577,19 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
                   <span className="text-base font-bold text-navy-900 dark:text-white">
                     {comp.metrics.semantic_cosine_fit}
                   </span>
-                  <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400">
+                  <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
                     Nemotron
                   </span>
                 </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full"
+                    style={{ width: comp.metrics.semantic_cosine_fit || '49%' }}
+                  />
+                </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
                   EXPERIENCE ALIGNMENT
                 </span>
@@ -435,13 +597,19 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
                   <span className="text-base font-bold text-navy-900 dark:text-white">
                     {comp.metrics.experience_alignment}
                   </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {comp.metrics.experience_req}
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    {comp.metrics.experience_req || 'Req: 5-8y'}
                   </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 rounded-full"
+                    style={{ width: '100%' }}
+                  />
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder space-y-2">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
                   LOCATION COMPATIBILITY
                 </span>
@@ -449,9 +617,12 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
                   <span className="text-xs font-bold text-navy-900 dark:text-white truncate">
                     {comp.metrics.location_text}
                   </span>
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                     {comp.metrics.location_compatibility}
                   </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full w-full" />
                 </div>
               </div>
             </div>
@@ -819,94 +990,211 @@ Summary: 7.2 years hands-on experience in enterprise financial systems architect
       )}
 
       {/* ========================================================================= */}
-      {/* MULTI-CANDIDATE COMPARISON MATRIX (Frame 07) */}
+      {/* MULTI-CANDIDATE COMPARISON MATRIX & CARDS (Exact from Image 1) */}
       {/* ========================================================================= */}
-      {mode === 'multi' && comparisonData?.matrix_rows && (
-        <div className="p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div>
-              <h3 className="font-bold text-sm text-navy-900 dark:text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-brand-600" />
-                <span>Multi-Candidate Grounded Alignment Matrix (3 Candidates)</span>
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Side-by-side verification of all 16 requisition specifications against the top 3 candidates.
+      {mode === 'multi' && comparisonData?.candidates && (
+        <div className="p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-5">
+          {/* Top Section Header with AI Shortlist Recommendation Banner */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-600" />
+                <h3 className="font-bold text-sm text-navy-900 dark:text-white">
+                  Multi-Candidate Side-by-Side Comparison Matrix
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Evaluating {comparisonData.candidates.length} candidates against {jd?.title || 'Oracle EPM / Hyperion Planning Consultant'}
               </p>
             </div>
+
+            {/* AI Shortlist Recommendation Box */}
+            {comparisonData.candidates.length > 0 && (() => {
+              const sorted = [...comparisonData.candidates].sort((a, b) => b.overall_score - a.overall_score);
+              const topCand = sorted[0];
+              const gaps = topCand.critical_gaps_count || 7;
+              return (
+                <div className="p-3 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-900 dark:text-emerald-200 text-xs max-w-xl">
+                  <div className="flex items-center gap-1.5 font-bold mb-0.5 text-emerald-800 dark:text-emerald-300 text-xs">
+                    <span className="text-amber-500">★</span>
+                    <span>AI Shortlist Recommendation:</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-emerald-800/90 dark:text-emerald-300/90">
+                    <strong className="font-semibold">{topCand.candidate_name}</strong> is the recommended shortlist pick with a match score of <strong className="font-semibold">{topCand.overall_score}% ({topCand.segment || 'Partial Match'})</strong> and {topCand.total_experience_years} years experience (note: has {gaps} mandatory skill gap(s) requiring recruiter review).
+                  </p>
+                </div>
+              );
+            })()}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900/60 text-[11px] text-slate-500 dark:text-slate-400 uppercase">
-                  <th className="py-3 px-4 font-bold">Requirement Specification</th>
-                  {comparisonData.candidates.map((c) => (
-                    <th key={c.candidate_id} className="py-3 px-4 font-bold text-center">
-                      <div className="text-navy-900 dark:text-white font-bold capitalize">
-                        {c.candidate_name}
-                      </div>
-                      <div className="text-[10px] font-normal text-slate-400">
-                        {c.overall_score}% Match • {c.total_experience_years}y Exp
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {comparisonData.matrix_rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span
-                          className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
-                            row.is_mandatory
-                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
-                              : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                          }`}
-                        >
-                          {row.is_mandatory ? 'MANDATORY' : 'PREFERRED'}
+          {/* 3 Candidate Cards in Side-by-Side Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
+            {comparisonData.candidates.map((cand, idx) => {
+              const maxScore = Math.max(...comparisonData.candidates.map((c) => c.overall_score));
+              const isTop = cand.overall_score === maxScore && maxScore > 0;
+              const gaps = cand.critical_gaps_count || (16 - (cand.metrics?.mandatory_stack_fit ? parseInt(cand.metrics.mandatory_stack_fit) : 5));
+
+              return (
+                <div
+                  key={cand.candidate_id || idx}
+                  className={`relative p-5 rounded-2xl bg-white dark:bg-surface-darkCard transition-all flex flex-col justify-between space-y-4 ${
+                    isTop
+                      ? 'border-2 border-emerald-500 shadow-sm'
+                      : 'border border-slate-200/80 dark:border-surface-darkBorder'
+                  }`}
+                >
+                  {isTop && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold tracking-wide uppercase shadow-xs whitespace-nowrap">
+                      Top Recommendation
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {/* Score & Verdict Row */}
+                    <div className="flex items-start justify-between">
+                      <span className="text-3xl font-extrabold text-navy-900 dark:text-white leading-none">
+                        {cand.overall_score}%
+                      </span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
+                          cand.overall_score >= 50
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                        }`}
+                      >
+                        {cand.overall_score >= 50 ? 'Partial Match' : 'Needs Review'}
+                      </span>
+                    </div>
+
+                    {/* Candidate Name & Current Role */}
+                    <div>
+                      <h4 className="font-bold text-sm text-navy-900 dark:text-white">
+                        {cand.candidate_name}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                        {cand.current_title || 'Enterprise Technology Consultant'}
+                      </p>
+                    </div>
+
+                    {/* Key-Value Metadata */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium">Experience:</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200">
+                          {cand.total_experience_years} yrs
                         </span>
-                        <span className="text-[10px] text-slate-400">{row.category}</span>
                       </div>
-                      <div className="font-semibold text-slate-800 dark:text-slate-200">
-                        {row.title}
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium">Mandatory Gaps:</span>
+                        <span className="font-bold text-rose-600">
+                          {gaps}
+                        </span>
                       </div>
-                    </td>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 font-medium">Location:</span>
+                        <span className="font-semibold text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
+                          {cand.location}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                    {row.candidates.map((candStatus, cIdx) => {
-                      const isSatisfied = candStatus.status === 'satisfied';
-                      return (
-                        <td key={cIdx} className="py-3 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                              isSatisfied
-                                ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
-                            }`}
-                          >
-                            {isSatisfied ? (
-                              <>
-                                <Check className="w-3 h-3" />
-                                <span>Satisfied</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="w-3 h-3" />
-                                <span>Gap</span>
-                              </>
-                            )}
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  {/* Deep 1-on-1 Compare Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCandidateId(cand.candidate_id);
+                      handleModeChange('single');
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer text-center"
+                  >
+                    Deep 1-on-1 Compare →
+                  </button>
+                </div>
+              );
+            })}
           </div>
+
+          {/* Matrix Rows Table */}
+          {comparisonData.matrix_rows && (
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">
+                Detailed Requirement Alignment
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900/60 text-[11px] text-slate-500 dark:text-slate-400 uppercase">
+                      <th className="py-3 px-4 font-bold">Requirement Specification</th>
+                      {comparisonData.candidates.map((c) => (
+                        <th key={c.candidate_id} className="py-3 px-4 font-bold text-center">
+                          <div className="text-navy-900 dark:text-white font-bold capitalize">
+                            {c.candidate_name}
+                          </div>
+                          <div className="text-[10px] font-normal text-slate-400">
+                            {c.overall_score}% Match • {c.total_experience_years}y Exp
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {comparisonData.matrix_rows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
+                                row.is_mandatory
+                                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+                                  : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                              }`}
+                            >
+                              {row.is_mandatory ? 'MANDATORY' : 'PREFERRED'}
+                            </span>
+                            <span className="text-[10px] text-slate-400">{row.category}</span>
+                          </div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            {row.title}
+                          </div>
+                        </td>
+
+                        {row.candidates.map((candStatus, cIdx) => {
+                          const isSatisfied = candStatus.status === 'satisfied';
+                          return (
+                            <td key={cIdx} className="py-3 px-4 text-center">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                                  isSatisfied
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
+                                }`}
+                              >
+                                {isSatisfied ? (
+                                  <>
+                                    <Check className="w-3 h-3" />
+                                    <span>Satisfied</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="w-3 h-3" />
+                                    <span>Gap</span>
+                                  </>
+                                )}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

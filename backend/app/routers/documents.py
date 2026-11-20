@@ -745,3 +745,130 @@ def get_jd_interview_kit(jd_id: int, db: Session = Depends(get_db)):
         "markdown_kit": "\n".join(md_lines),
     }
 
+
+# ============================================================================
+# CONVENTIONAL STRUCTURED JD WORKSPACE ENDPOINTS (WITHOUT AI)
+# ============================================================================
+
+@router.get(
+    "/jds/{jd_id}/structured",
+    summary="Get 10-Section Structured Job Description Representation",
+    description="Deterministic structured representation covering 10 enterprise sections, validation report, and raw document toggle.",
+)
+def get_structured_jd(jd_id: int, db: Session = Depends(get_db)):
+    from backend.app.services.structured_jd_service import get_structured_job_description
+    data = get_structured_job_description(jd_id, db)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
+    return data
+
+
+@router.put(
+    "/jds/{jd_id}/structured",
+    summary="Update Structured Job Description Fields",
+    description="Recruiter manual edits to title, department, skills, responsibilities, or status.",
+)
+def update_structured_jd(jd_id: int, payload: dict, db: Session = Depends(get_db)):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
+
+    if "title" in payload and payload["title"]:
+        jd.title = payload["title"]
+    if "department" in payload and payload["department"]:
+        jd.department = payload["department"]
+    if "location" in payload:
+        jd.location = payload["location"]
+    if "status" in payload and payload["status"]:
+        jd.status = payload["status"]
+    if "required_skills" in payload and payload["required_skills"]:
+        if isinstance(payload["required_skills"], list):
+            jd.required_skills = ", ".join(payload["required_skills"])
+        else:
+            jd.required_skills = payload["required_skills"]
+    if "description" in payload and payload["description"]:
+        jd.description = payload["description"]
+
+    db.commit()
+    db.refresh(jd)
+
+    from backend.app.services.structured_jd_service import get_structured_job_description
+    from backend.app.services.jd_version_service import create_jd_version
+    
+    # Register version record
+    skills_list = [s.strip() for s in (jd.required_skills or "").split(",") if s.strip()]
+    create_jd_version(
+        jd_id=jd.id,
+        author=payload.get("author", "Recruiter Admin"),
+        change_summary=payload.get("change_summary", "Updated structured job details."),
+        updated_data={"skills": skills_list, "status": jd.status},
+    )
+
+    return get_structured_job_description(jd_id, db)
+
+
+@router.get(
+    "/jds/{jd_id}/validation",
+    summary="Rule-Based Job Description Quality & Validation Report",
+    description="Deterministic validation checking missing fields, experience consistency, duplicate skills, and completeness score.",
+)
+def get_jd_validation(jd_id: int, db: Session = Depends(get_db)):
+    from backend.app.services.structured_jd_service import get_structured_job_description
+    structured = get_structured_job_description(jd_id, db)
+    if not structured:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
+    return structured.get("validation", {})
+
+
+@router.get(
+    "/jds/{jd_id}/versions",
+    summary="Get Version History for Requisition",
+    description="Tracks v1, v2... timestamps, recruiter authors, and added/removed skills.",
+)
+def get_jd_version_history(jd_id: int, db: Session = Depends(get_db)):
+    from backend.app.services.structured_jd_service import get_structured_job_description
+    from backend.app.services.jd_version_service import get_jd_versions
+    structured = get_structured_job_description(jd_id, db)
+    if not structured:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
+    return get_jd_versions(jd_id, base_jd=structured)
+
+
+@router.post(
+    "/jds/{jd_id}/versions",
+    summary="Create New JD Version",
+    description="Snapshots current JD state into v2, v3... with change summary and skill diffs.",
+)
+def create_new_jd_version(jd_id: int, payload: dict, db: Session = Depends(get_db)):
+    from backend.app.services.jd_version_service import create_jd_version
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
+
+    new_ver = create_jd_version(
+        jd_id=jd_id,
+        author=payload.get("author", "Recruiter Admin"),
+        change_summary=payload.get("change_summary", "Updated requirements specifications."),
+        updated_data=payload,
+    )
+    return new_ver
+
+
+@router.get(
+    "/jds/{jd_id}/versions/diff",
+    summary="Compare Two JD Versions",
+    description="Computes exact added, removed, and retained skills between two version numbers.",
+)
+def get_version_diff(
+    jd_id: int,
+    ver_a: int = Query(1, description="First version number (e.g. 1)"),
+    ver_b: int = Query(2, description="Second version number (e.g. 2)"),
+    db: Session = Depends(get_db),
+):
+    from backend.app.services.jd_version_service import diff_jd_versions
+    diff = diff_jd_versions(jd_id, ver_a, ver_b)
+    if "error" in diff:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=diff["error"])
+    return diff
+
+

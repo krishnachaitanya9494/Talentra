@@ -355,7 +355,13 @@ class SourcingService:
 
             # Retrieve associated resume document info if available
             resume_link = db.query(CandidateResumeLink).filter(CandidateResumeLink.candidate_id == cand.id).first()
-            resume_filename = resume_link.resume_document.original_filename if resume_link and resume_link.resume_document else "CRM Profile / Extracted"
+            resume_filename = "CRM Profile / Extracted"
+            if resume_link:
+                res_doc = getattr(resume_link, "resume_document", None)
+                if res_doc and hasattr(res_doc, "original_filename"):
+                    resume_filename = res_doc.original_filename
+                elif getattr(cand, "resume_url", None):
+                    resume_filename = cand.resume_url.split("/")[-1].split("\\")[-1]
 
             ranked_results.append({
                 "rank": rank_idx,
@@ -458,10 +464,10 @@ class SourcingService:
         ).all()
         source_docs = [
             {
-                "resume_id": r.resume_document.id if r.resume_document else None,
-                "filename": r.resume_document.original_filename if r.resume_document else "CRM Source",
-                "file_path": r.resume_document.file_path if r.resume_document else None,
-                "is_primary": r.is_primary,
+                "resume_id": getattr(r, "resume_doc_id", None),
+                "filename": getattr(getattr(r, "resume_document", None), "original_filename", "CRM Source"),
+                "file_path": getattr(getattr(r, "resume_document", None), "file_path", None),
+                "is_primary": getattr(r, "is_primary", True),
             }
             for r in res_links
         ]

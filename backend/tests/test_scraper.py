@@ -129,7 +129,7 @@ def test_batch_parse_and_exports_goodfit_workflow(client):
     assert csv_resp.status_code == 200
     assert "Laxmikant Patil" in csv_resp.text
     assert "Sarah Lin" in csv_resp.text
-    assert "Experience (years)" in csv_resp.text
+    assert "Mail ID" in csv_resp.text
 
     # 4. Import to Talent Pool
     import_resp = client.post("/api/v1/scraper/import-parsed-candidates", json={"candidates": candidates})
@@ -319,8 +319,7 @@ def test_manual_correction_and_exports_history(client):
 
 def test_single_sheet_excel_export_minimal_structure(client):
     """
-    Verifies that export-excel with single_sheet=True generates a genuine single-sheet
-    'Candidate Details' workbook with empty cells for missing values and proper headers.
+    Verifies that the default single-sheet export contains only candidate contact fields.
     """
     import io
     import openpyxl
@@ -354,17 +353,58 @@ def test_single_sheet_excel_export_minimal_structure(client):
     assert wb.sheetnames == ["Candidate Details"]
     ws = wb["Candidate Details"]
 
-    # Check header
     headers = [cell.value for cell in ws[1]]
-    assert "Candidate Name" in headers
-    assert "Phone Number" in headers
-    assert "Technical Skills" in headers
-    assert "Notice Period" in headers
-
-    # Check data row
+    assert headers == ["Candidate Name", "Phone Number", "Mail ID", "Location"]
     data_row = [cell.value for cell in ws[2]]
-    assert data_row[0] == "Ananya Sen"
-    assert data_row[1] == "+91-98765-43210"
-    # Notice Period (index 8) must be None (genuinely empty cell)
-    assert data_row[8] is None
+    assert data_row == ["Ananya Sen", "+91-98765-43210", "ananya.sen@example.com", "Kolkata"]
+
+
+def test_jd_candidate_exports_include_experience_and_resume_skills(client):
+    import csv
+    import io
+    import openpyxl
+
+    candidate = {
+        "name": "Ananya Sen",
+        "phone": "+91-98765-43210",
+        "email": "ananya.sen@example.com",
+        "location": "Kolkata",
+        "experience_years": 3.5,
+        "skills": ["SQL", "PowerBI", "Python"],
+    }
+
+    excel_resp = client.post(
+        "/api/v1/scraper/export-excel",
+        json={"candidates": [candidate], "single_sheet": True, "include_match_details": True},
+    )
+    assert excel_resp.status_code == 200
+    workbook = openpyxl.load_workbook(io.BytesIO(excel_resp.content))
+    worksheet = workbook["Candidate Details"]
+    assert [cell.value for cell in worksheet[1]] == [
+        "Candidate Name",
+        "Phone Number",
+        "Mail ID",
+        "Location",
+        "Experience (Years)",
+        "Resume Skills",
+    ]
+    assert [cell.value for cell in worksheet[2]] == [
+        "Ananya Sen",
+        "+91-98765-43210",
+        "ananya.sen@example.com",
+        "Kolkata",
+        3.5,
+        "SQL, PowerBI, Python",
+    ]
+
+    csv_resp = client.post(
+        "/api/v1/scraper/export-csv",
+        json={"candidates": [candidate], "include_match_details": True},
+    )
+    assert csv_resp.status_code == 200
+    rows = list(csv.reader(io.StringIO(csv_resp.text)))
+    assert rows == [
+        ["Name", "Phone Number", "Mail ID", "Location", "Experience (Years)", "Resume Skills"],
+        ["Ananya Sen", "+91-98765-43210", "ananya.sen@example.com", "Kolkata", "3.5", "SQL, PowerBI, Python"],
+    ]
 

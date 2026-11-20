@@ -158,7 +158,8 @@ class ExcelExportService:
             c = r.candidate
             # Check resume link
             rlink = db.query(CandidateResumeLink).filter(CandidateResumeLink.candidate_id == c.id).first()
-            resume_file = rlink.resume_document.original_filename if rlink and rlink.resume_document else "CRM Profile"
+            res_doc = getattr(rlink, "resume_document", None) if rlink else None
+            resume_file = res_doc.original_filename if res_doc else (getattr(c, "resume_url", "").split("/")[-1].split("\\")[-1] or "CRM Profile")
 
             row_data = [
                 r.rank,
@@ -262,7 +263,8 @@ class ExcelExportService:
             ]) if educations else (getattr(c, "primary_education", None) or "Not Available")
 
             rlink = db.query(CandidateResumeLink).filter(CandidateResumeLink.candidate_id == c.id).first()
-            resume_ref = rlink.resume_document.original_filename if rlink and rlink.resume_document else (getattr(c, "source_type", None) or "CRM Database")
+            res_doc = getattr(rlink, "resume_document", None) if rlink else None
+            resume_ref = res_doc.original_filename if res_doc else (getattr(c, "source_type", None) or "CRM Database")
 
             row_data = [
                 c.candidate_code or f"CAND-{c.id:04d}",

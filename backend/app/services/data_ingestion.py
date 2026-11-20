@@ -6,6 +6,7 @@ in data/jds and data/resumes, and processes new uploaded files.
 """
 
 import os
+import re
 import json
 import logging
 from pathlib import Path
@@ -309,8 +310,11 @@ def save_and_ingest_uploaded_resume(
         db.refresh(existing)
         return existing
 
-    count = db.scalar(select(func.count(Candidate.id))) or 0
-    cand_code = f"CND-UP-{count + 1:05d}"
+    cand_num = (db.scalar(select(func.count(Candidate.id))) or 0) + 1
+    cand_code = f"CND-UP-{cand_num:05d}"
+    while db.scalar(select(Candidate).where(Candidate.candidate_code == cand_code)):
+        cand_num += 1
+        cand_code = f"CND-UP-{cand_num:05d}"
     exp_years = round(parsed["total_experience_months"] / 12.0, 1)
 
     candidate = Candidate(

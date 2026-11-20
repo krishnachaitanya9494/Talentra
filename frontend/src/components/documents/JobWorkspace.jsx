@@ -28,6 +28,9 @@ import {
   GitCompare,
   Upload,
   Maximize2,
+  Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
   ChevronUp,
   XCircle,
   Shield,
@@ -39,15 +42,22 @@ import {
   Square,
   Share2,
   Zap,
+  Printer,
 } from 'lucide-react';
 import { Badge } from '../common/Badge';
 import { EmptyState } from '../common/EmptyState';
+import { StructuredJDSpecs } from './StructuredJDSpecs';
+import { RequirementsWorkspaceTab } from './RequirementsWorkspaceTab';
+import { ScreeningQAManager } from './ScreeningQAManager';
+import { JDVersionHistoryModal } from './JDVersionHistoryModal';
+import { EditJDModal } from './EditJDModal';
 import {
   getJobDescriptions,
   getRepositoryJDs,
   searchBooleanCandidates,
   getJDInterviewKit,
   triggerMatchingRun,
+  getStructuredJD,
   apiClient,
 } from '../../services/api';
 
@@ -63,6 +73,21 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
   const [activeTab, setActiveTab] = useState('specs');
   const [showSplitDocument, setShowSplitDocument] = useState(false);
   const [scopeMode, setScopeMode] = useState('structured'); // 'structured' vs 'source'
+
+  // Full Window and layout collapse states
+  const [isFullWindow, setIsFullWindow] = useState(false);
+  const [isLeftPanelCollapsed, setIsLeftPanelCollapsed] = useState(false);
+
+  // Escape key handler to exit Full Window mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullWindow) {
+        setIsFullWindow(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullWindow]);
 
   // Accordion toggle states
   const [isSummaryOpen, setIsSummaryOpen] = useState(true);
@@ -94,6 +119,23 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
   // Feedback notifications
   const [actionNotice, setActionNotice] = useState(null);
 
+  // Structured JD & Modal states
+  const [structuredJd, setStructuredJd] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+
+  // Load Structured JD
+  const loadStructuredJD = async (jdId) => {
+    const id = jdId || selectedJd?.id;
+    if (!id) return;
+    try {
+      const data = await getStructuredJD(id);
+      setStructuredJd(data);
+    } catch (err) {
+      console.error('Failed to load structured JD:', err);
+    }
+  };
+
   // Load list of JDs from database
   const fetchJDs = async () => {
     try {
@@ -106,6 +148,7 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
           const match = prev ? items.find((j) => j.id === prev.id) : null;
           const next = match || items[0];
           loadInterviewKit(next.id);
+          loadStructuredJD(next.id);
           return next;
         });
       }
@@ -134,6 +177,7 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
       setSourcingResults(null);
       setMatchingResults(null);
       loadInterviewKit(selectedJd.id);
+      loadStructuredJD(selectedJd.id);
     }
   }, [selectedJd]);
 
@@ -293,17 +337,27 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
       </div>
 
       {/* Main Two-Panel Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
         {/* ========================================================================= */}
         {/* LEFT PANEL: OPEN JOB POSITIONS (4 Cols) */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="p-4 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                OPEN JOB POSITIONS
-              </span>
-            </div>
+        {!isLeftPanelCollapsed ? (
+          <div className="w-full lg:w-[440px] xl:w-[480px] shrink-0 space-y-3">
+            <div className="p-4 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  OPEN JOB POSITIONS
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsLeftPanelCollapsed(true)}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Collapse left directory panel for wide view"
+                >
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Collapse</span>
+                </button>
+              </div>
 
             {/* Filter Inputs Row */}
             <div className="flex items-center gap-2">
@@ -355,63 +409,67 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                     <div
                       key={jd.id}
                       onClick={() => setSelectedJd(jd)}
-                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer text-xs space-y-2 relative ${
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer text-xs space-y-2.5 relative ${
                         isSelected
-                          ? 'bg-emerald-50/20 dark:bg-emerald-950/20 border-emerald-500 shadow-sm ring-1 ring-emerald-500'
-                          : 'bg-white dark:bg-surface-darkCard border-slate-200/80 dark:border-surface-darkBorder hover:border-slate-300 dark:hover:border-slate-700'
+                          ? 'bg-white dark:bg-surface-darkCard border-2 border-emerald-500 shadow-sm'
+                          : 'bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
                       {/* Top Badges Row */}
-                      <div className="flex items-center justify-between text-[10px]">
-                        <div className="flex items-center gap-1.5 font-bold">
-                          <span className="font-mono text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 font-mono whitespace-nowrap shrink-0">
                             {jd.req_code}
                           </span>
-                          <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">
+                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 text-[11px] font-bold border border-blue-200/60 dark:border-blue-800/60 whitespace-nowrap shrink-0">
                             v1
                           </span>
-                          <span className="text-slate-400 font-normal">
+                          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium truncate">
                             {jd.department || 'Engineering & Delivery'}
                           </span>
                         </div>
 
-                        <select
-                          value={jd.status || 'Under Review'}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            jd.status = e.target.value;
-                            setJds([...jds]);
-                            triggerToast(`Updated ${jd.req_code} status to ${e.target.value}`);
-                          }}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 border-none text-slate-700 dark:text-slate-300 cursor-pointer"
-                        >
-                          <option value="Under Review">Under Review</option>
-                          <option value="Active">Active</option>
-                          <option value="On Hold">On Hold</option>
-                        </select>
+                        <div className="relative shrink-0">
+                          <select
+                            value={jd.status || 'Under Review'}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              jd.status = e.target.value;
+                              setJds([...jds]);
+                              triggerToast(`Updated ${jd.req_code} status to ${e.target.value}`);
+                            }}
+                            className="appearance-none pl-2.5 pr-6 py-1 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs cursor-pointer focus:outline-none whitespace-nowrap"
+                          >
+                            <option value="Under Review">Under Review</option>
+                            <option value="Active">Active</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-1.5 top-2 pointer-events-none" />
+                        </div>
                       </div>
 
                       {/* Title */}
-                      <h4 className="font-bold text-navy-900 dark:text-slate-100 text-xs line-clamp-1">
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-[13px] tracking-tight leading-snug">
                         {jd.title}
                       </h4>
 
                       {/* Description Snippet */}
-                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                         {jd.description || 'Enterprise solution delivery, architecture and development scope.'}
                       </p>
 
                       {/* Footer Row */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-slate-400" />
-                            <span>{jd.location || 'Hyderabad / Remote'}</span>
+                      <div className="flex items-center justify-between pt-1 gap-2">
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="whitespace-nowrap">{jd.location || 'Hyderabad / Remote'}</span>
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Briefcase className="w-3 h-3 text-slate-400" />
-                            <span>5 - 8 Years</span>
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="whitespace-nowrap">5 - 8 Years</span>
                           </span>
                         </div>
 
@@ -422,10 +480,11 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                             setSelectedJd(jd);
                             setActiveTab('specs');
                           }}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-2xs transition-all cursor-pointer whitespace-nowrap shrink-0"
                         >
-                          <Sparkles className="w-3 h-3" />
-                          <span>Analyze JD &gt;</span>
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="whitespace-nowrap">Analyze JD</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         </button>
                       </div>
                     </div>
@@ -435,28 +494,114 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
             </div>
           </div>
         </div>
+        ) : (
+          !isFullWindow && (
+            <div className="shrink-0 mb-2 lg:mb-0">
+              <button
+                type="button"
+                onClick={() => setIsLeftPanelCollapsed(false)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-brand-500 hover:text-brand-600 transition-all cursor-pointer"
+                title="Expand Open Job Positions Directory"
+              >
+                <PanelLeftOpen className="w-4 h-4 text-brand-600" />
+                <span>Job Positions ({filteredJds.length})</span>
+              </button>
+            </div>
+          )
+        )}
 
         {/* ========================================================================= */}
-        {/* RIGHT PANEL: SPECIFICATION & MATCH DETAILS (8 Cols) */}
+        {/* RIGHT PANEL: SPECIFICATION & MATCH DETAILS (8 Cols or Full Window Mode) */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-8 space-y-4">
-          {selectedJd ? (
-            <div className="p-5 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-4">
-              {/* Requisition Header Area */}
-              <div className="space-y-3 pb-3 border-b border-slate-200 dark:border-surface-darkBorder">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400">
-                    SPECIFICATION & MATCH DETAILS
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => triggerToast('Toggled Full Page View')}
-                    className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-medium cursor-pointer"
-                  >
-                    <Maximize2 className="w-3 h-3" />
-                    <span>Full Page View</span>
-                  </button>
-                </div>
+        <div
+          className={
+            isFullWindow
+              ? 'fixed inset-0 z-50 overflow-y-auto bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur-md p-4 sm:p-6 lg:p-8 animate-in fade-in duration-200'
+              : 'flex-1 min-w-0 w-full space-y-4'
+          }
+        >
+          <div className={isFullWindow ? 'max-w-[1920px] mx-auto space-y-4 pb-12' : 'space-y-4'}>
+            {selectedJd ? (
+              <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-4">
+                {/* Full Window Sticky Header Bar */}
+                {isFullWindow && (
+                  <div className="sticky -top-4 sm:-top-6 -mt-2 z-30 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-900/95 dark:bg-slate-900/95 text-white backdrop-blur-md shadow-lg border border-slate-700">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-500 text-white font-bold text-xs uppercase tracking-wider">
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span>Full Window Mode</span>
+                      </span>
+                      <div className="flex items-center gap-2 truncate text-xs sm:text-sm">
+                        <span className="font-mono font-bold text-brand-300">
+                          {selectedJd.req_code}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span className="font-semibold text-slate-100 truncate">
+                          {selectedJd.title}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+                      <div className="flex items-center gap-1 text-xs text-slate-300">
+                        <span className="hidden md:inline">Requisition:</span>
+                        <select
+                          value={selectedJd.id}
+                          onChange={(e) => {
+                            const found = jds.find((j) => j.id === parseInt(e.target.value));
+                            if (found) setSelectedJd(found);
+                          }}
+                          className="px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-brand-400 cursor-pointer"
+                        >
+                          {jds.map((j) => (
+                            <option key={j.id} value={j.id} className="bg-slate-900 text-white">
+                              {j.req_code} — {j.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsFullWindow(false)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                        title="Exit Full Window (Esc)"
+                      >
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span>Exit Full Window</span>
+                        <kbd className="hidden sm:inline-block px-1 py-0.2 rounded text-[10px] bg-slate-200 text-slate-800 font-mono">
+                          Esc
+                        </kbd>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Requisition Header Area */}
+                <div className="space-y-3 pb-3 border-b border-slate-200 dark:border-surface-darkBorder">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400">
+                      SPECIFICATION & MATCH DETAILS
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsFullWindow(!isFullWindow)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                      title={isFullWindow ? 'Exit Full Window (Esc)' : 'Expand to Full Window View'}
+                    >
+                      {isFullWindow ? (
+                        <>
+                          <Minimize2 className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                          <span>Exit Full Window</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                          <span>Full Window</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
                 {/* Requisition Top Meta */}
                 <div>
@@ -511,8 +656,12 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
 
                   <button
                     type="button"
-                    onClick={() => setActiveTab('specs')}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white shadow-xs transition-colors cursor-pointer"
+                    onClick={() => setActiveTab('requirements')}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl shadow-xs transition-colors cursor-pointer ${
+                      activeTab === 'requirements'
+                        ? 'bg-indigo-600 text-white font-bold'
+                        : 'bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white'
+                    }`}
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>Requirements Workspace</span>
@@ -567,6 +716,22 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                     <span>1. JD Specifications</span>
                     <span className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-white/20">
                       Scope & Arch
+                    </span>
+                  </button>
+
+                  {/* Tab: Requirements Workspace */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('requirements')}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
+                      activeTab === 'requirements'
+                        ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                        : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800'
+                    }`}
+                  >
+                    <span>Requirements</span>
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white/20">
+                      8 Categories
                     </span>
                   </button>
 
@@ -659,446 +824,73 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                   </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsSummaryOpen(!isSummaryOpen)}
-                  className="hover:underline flex items-center gap-0.5 text-slate-500 text-[11px] cursor-pointer"
-                >
-                  <ChevronUp className="w-3 h-3" />
-                  <span>Toggle Sections</span>
-                </button>
+                <div className="flex items-center gap-2 ml-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsFullWindow(!isFullWindow)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all shadow-2xs cursor-pointer ${
+                      isFullWindow
+                        ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-sm'
+                        : 'bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800'
+                    }`}
+                    title={isFullWindow ? 'Exit Full Window View (Esc)' : 'Expand Section to Full Window'}
+                  >
+                    {isFullWindow ? (
+                      <>
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span>Exit Full Window</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                        <span>Full Window</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+                    className="hover:underline flex items-center gap-0.5 text-slate-500 text-[11px] cursor-pointer"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                    <span>Toggle Sections</span>
+                  </button>
+                </div>
               </div>
 
               {/* ========================================================================= */}
-              {/* TAB 1: SPECIFICATIONS (Scope, Architecture & Deliverables) */}
+              {/* TAB 1: SPECIFICATIONS (10 Structured Canonical Sections, Validation, Raw Toggle) */}
               {/* ========================================================================= */}
               {activeTab === 'specs' && (
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-slate-200/80 dark:border-surface-darkBorder bg-white dark:bg-surface-darkCard overflow-hidden">
-                    <div
-                      onClick={() => setIsSummaryOpen(!isSummaryOpen)}
-                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-brand-600" />
-                        <span className="font-bold text-xs uppercase tracking-wider text-navy-900 dark:text-slate-100">
-                          JOB SUMMARY & SCOPE
-                        </span>
-                      </div>
+                <StructuredJDSpecs
+                  jd={selectedJd}
+                  structuredData={structuredJd}
+                  onOpenEdit={() => setIsEditModalOpen(true)}
+                  onOpenVersionHistory={() => setIsVersionHistoryOpen(true)}
+                />
+              )}
 
-                      <div className="flex items-center gap-2 text-slate-400 text-xs">
-                        <span className="line-clamp-1 max-w-sm text-[11px]">
-                          {selectedJd.description?.slice(0, 45) || 'Looking for an experienced Oracle EPM Cons...'}
-                        </span>
-                        {isSummaryOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </div>
-                    </div>
-
-                    {isSummaryOpen && (
-                      <div className="p-4 pt-0 space-y-4 text-xs border-t border-slate-100 dark:border-slate-800">
-                        {/* 4-Column Metadata Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
-                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                              DEPARTMENT
-                            </span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              {selectedJd.department || 'Engineering & Delivery'}
-                            </span>
-                          </div>
-
-                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                              EXPERIENCE LEVEL
-                            </span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              5 - 8 Years
-                            </span>
-                          </div>
-
-                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                              LOCATION / WORK MODE
-                            </span>
-                            <span className="font-bold text-slate-800 dark:text-slate-200">
-                              {selectedJd.location || 'Hyderabad / Remote'}
-                            </span>
-                          </div>
-
-                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/70 dark:border-surface-darkBorder">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                              SOURCE DOCUMENT
-                            </span>
-                            <span className="font-mono text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate block">
-                              {getSourceDocName(selectedJd)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Mode Toggle Bar */}
-                        <div className="flex items-center justify-between p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-surface-darkBorder">
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setScopeMode('structured')}
-                              className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
-                                scopeMode === 'structured'
-                                  ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs'
-                                  : 'text-slate-600 dark:text-slate-400'
-                              }`}
-                            >
-                              ✨ AI Structured Scope [12 Dimensions]
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setScopeMode('source')}
-                              className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer ${
-                                scopeMode === 'source'
-                                  ? 'bg-white dark:bg-surface-darkCard text-navy-900 dark:text-slate-100 shadow-xs'
-                                  : 'text-slate-600 dark:text-slate-400'
-                              }`}
-                            >
-                              📄 Original Source Document
-                            </button>
-                          </div>
-
-                          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium pr-2">
-                            ✨ Deep semantic synthesis
-                          </span>
-                        </div>
-
-                        {scopeMode === 'structured' ? (
-                          <div className="space-y-3 pt-1">
-                            {/* Role Overview & Business Context */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-surface-darkBorder bg-slate-50/50 dark:bg-slate-900/30 space-y-1.5">
-                                <span className="font-bold text-[10px] uppercase text-slate-400 flex items-center gap-1">
-                                  <span>ⓘ</span>
-                                  <span>ROLE OVERVIEW</span>
-                                </span>
-                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                  {selectedJd.description?.slice(0, 240) ||
-                                    'The Oracle EPM / Hyperion Planning Consultant is responsible for driving end-to-end technical solution delivery, configuration, and workflow integration within the Corporate Financial Systems & Enterprise Performance Management practice.'}
-                                </p>
-                              </div>
-
-                              <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-surface-darkBorder bg-slate-50/50 dark:bg-slate-900/30 space-y-1.5">
-                                <span className="font-bold text-[10px] uppercase text-slate-400 flex items-center gap-1">
-                                  <span>🏛</span>
-                                  <span>BUSINESS CONTEXT</span>
-                                </span>
-                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                  Operating within Enterprise Performance Management, this role ensures business-critical planning, forecast modeling, and close cycles run with high availability, strict compliance clocks, and auditable history.
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Technical Scope & Architecture */}
-                            <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-surface-darkBorder bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
-                              <span className="font-bold text-[10px] uppercase text-slate-400 flex items-center gap-1">
-                                <span>⚡</span>
-                                <span>TECHNICAL SCOPE & ARCHITECTURE</span>
-                              </span>
-                              <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
-                                Hands-on platform configuration encompassing Oracle EPM Cloud, Smart View for Office, Essbase 21c, custom API integrations, business rules, and automated workflow triggers.
-                              </p>
-                              <div className="flex flex-wrap gap-1.5 pt-1">
-                                {(selectedJd.skills ? selectedJd.skills.split(',').map((s) => s.trim()) : [
-                                  'Dimension Hierarchies',
-                                  'Intercompany Eliminations',
-                                  'Currency Translation',
-                                  'Close Process Automation',
-                                ]).map((chip, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                                  >
-                                    {chip}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Core Responsibilities & Functional Deliverables */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-surface-darkBorder bg-slate-50/50 dark:bg-slate-900/30 space-y-1.5">
-                                <span className="font-bold text-[10px] uppercase text-slate-400 flex items-center gap-1">
-                                  <span>✓</span>
-                                  <span>CORE RESPONSIBILITIES</span>
-                                </span>
-                                <ul className="text-slate-700 dark:text-slate-300 space-y-1 text-xs list-disc pl-4">
-                                  <li>Own end-to-end design, implementation, and deployment of {selectedJd.title} solution architectures.</li>
-                                  <li>Collaborate with enterprise stakeholders to translate business requirements into governed technical specifications.</li>
-                                  <li>Maintain auditable workflow history and compliance with regulatory governance standards.</li>
-                                </ul>
-                              </div>
-
-                              <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-surface-darkBorder bg-slate-50/50 dark:bg-slate-900/30 space-y-1.5">
-                                <span className="font-bold text-[10px] uppercase text-slate-400 flex items-center gap-1">
-                                  <span>✓</span>
-                                  <span>FUNCTIONAL & LIFECYCLE DELIVERABLES</span>
-                                </span>
-                                <ul className="text-slate-700 dark:text-slate-300 space-y-1 text-xs list-disc pl-4">
-                                  <li>Develop reusable service components and standardized platform extensions.</li>
-                                  <li>Participate in release management, defect resolution, and pre-production operational readiness.</li>
-                                </ul>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4 rounded-xl bg-slate-950 text-slate-100 font-mono text-[11px] leading-relaxed max-h-[500px] overflow-y-auto whitespace-pre-wrap select-all border border-slate-800">
-                            {selectedJd.description || 'Full source text loaded from repository.'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {/* ========================================================================= */}
+              {/* TAB: REQUIREMENTS WORKSPACE (8 Categories & Recruiter Weighting) */}
+              {/* ========================================================================= */}
+              {activeTab === 'requirements' && (
+                <RequirementsWorkspaceTab
+                  jd={selectedJd}
+                  structuredJd={structuredJd}
+                />
               )}
 
               {/* ========================================================================= */}
               {/* TAB 2: DEDICATED SECTION — SCREENING QUESTIONS & MODEL ANSWERS */}
               {/* ========================================================================= */}
               {activeTab === 'questions' && (
-                <div className="space-y-4 text-xs">
-                  {/* Top Bar for Questions: Filters & Actions */}
-                  <div className="p-4 rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200/80 dark:border-surface-darkBorder shadow-subtle space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <HelpCircle className="w-4 h-4 text-emerald-600" />
-                          <h3 className="font-bold text-sm text-navy-900 dark:text-slate-100">
-                            Technical Screening Questions & In-Depth Model Answers
-                          </h3>
-                          <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                            {questions.length} Questions
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500">
-                          Structured phone screen Q&As with verbatim expected signals, model answers, and interviewer scoring rubrics.
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleCopyKit}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold cursor-pointer"
-                        >
-                          {copiedKit ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedKit ? 'Copied Full Kit' : 'Copy Full Q&A'}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDownloadKit}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Download .md</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Filter Pills */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
-                      <span className="text-slate-400 font-semibold mr-1">Filter Domain:</span>
-                      {['All', 'Architecture', 'Tuning', 'Integration', 'Domain', 'Cloud'].map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => setQuestionCategoryFilter(cat)}
-                          className={`px-2.5 py-1 rounded-lg font-semibold cursor-pointer ${
-                            questionCategoryFilter === cat
-                              ? 'bg-emerald-700 text-white font-bold'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                          }`}
-                        >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* List of Detailed Question Cards */}
-                  <div className="space-y-4">
-                    {kitLoading ? (
-                      <div className="p-12 text-center text-slate-400">
-                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
-                        Generating specialized technical questions and model answers...
-                      </div>
-                    ) : filteredQuestions.length === 0 ? (
-                      <div className="p-12 text-center text-slate-400">
-                        No screening questions found for this category.
-                      </div>
-                    ) : (
-                      filteredQuestions.map((q, idx) => (
-                        <div
-                          key={q.id || idx}
-                          className="p-5 rounded-2xl border border-slate-200/90 dark:border-surface-darkBorder bg-white dark:bg-surface-darkCard shadow-subtle space-y-3.5"
-                        >
-                          {/* Question Header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                                QUESTION {idx + 1}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                                {q.category}
-                              </span>
-                              <span className="text-[10px] text-slate-400">
-                                • Stage: <strong>{q.recommended_stage || 'Technical Round 1'}</strong>
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.2 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                                {q.difficulty || 'Advanced'}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyQA(q)}
-                                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                                title="Copy question and model answer"
-                              >
-                                {copiedQAId === q.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* The Question in Quotes */}
-                          <p className="text-xs font-bold text-navy-900 dark:text-slate-100 leading-relaxed italic bg-slate-50/70 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200/60 dark:border-surface-darkBorder">
-                            "{q.question}"
-                          </p>
-
-                          {/* Full Ideal Model Answer */}
-                          <div className="p-3.5 rounded-xl bg-indigo-50/30 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-1.5">
-                            <span className="font-bold text-[10px] uppercase text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
-                              <Sparkles className="w-3 h-3 text-indigo-600" />
-                              <span>IDEAL MODEL TECHNICAL ANSWER</span>
-                            </span>
-                            <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
-                              {q.model_answer}
-                            </p>
-                          </div>
-
-                          {/* Expected Positive Signals (Interactive Checklist) */}
-                          <div className="space-y-1.5 pt-1">
-                            <span className="font-bold text-[10px] uppercase text-slate-400 block">
-                              EXPECTED SIGNALS & KEY PHRASES (CHECKLIST):
-                            </span>
-                            <div className="space-y-1">
-                              {q.expected_signals.map((signal, sIdx) => {
-                                const sigKey = `${q.id}_sig_${sIdx}`;
-                                const isChecked = !!checkedSignals[sigKey];
-                                return (
-                                  <div
-                                    key={sIdx}
-                                    onClick={() => toggleSignal(sigKey)}
-                                    className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-colors text-xs ${
-                                      isChecked
-                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-medium'
-                                        : 'hover:bg-slate-50 dark:hover:bg-slate-900/40 text-slate-700 dark:text-slate-300'
-                                    }`}
-                                  >
-                                    {isChecked ? (
-                                      <CheckSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                                    ) : (
-                                      <Square className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                                    )}
-                                    <span>{signal}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Scoring Rubric & Red Flags */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                            {/* Scoring Rubric */}
-                            {q.rubric && (
-                              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-surface-darkBorder space-y-1.5 text-[11px]">
-                                <span className="font-bold uppercase text-[10px] text-slate-500 block">
-                                  SCORING RUBRIC (1 - 5 SCALE)
-                                </span>
-                                <div>
-                                  <strong className="text-rose-600">1-2 (Below Bar):</strong> {q.rubric.below_bar}
-                                </div>
-                                <div>
-                                  <strong className="text-slate-700 dark:text-slate-300">3 (Meets Bar):</strong> {q.rubric.meets_bar}
-                                </div>
-                                <div>
-                                  <strong className="text-emerald-600">4-5 (Exceeds):</strong> {q.rubric.exceeds_bar}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Potential Red Flags */}
-                            <div className="p-3 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 space-y-1 text-[11px] text-rose-800 dark:text-rose-300">
-                              <span className="font-bold uppercase text-[10px] text-rose-700 dark:text-rose-400 block">
-                                ⚠ WATCH-OUTS & RED FLAGS:
-                              </span>
-                              <ul className="space-y-0.5 list-disc pl-3">
-                                {q.red_flags.map((r, rIdx) => (
-                                  <li key={rIdx}>{r}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-
-                          {/* Recruiter Score Rating Row */}
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                            <span className="text-slate-400 font-semibold">Rate Candidate Response:</span>
-                            <div className="flex items-center gap-1.5">
-                              {[1, 2, 3, 4, 5].map((num) => (
-                                <button
-                                  key={num}
-                                  type="button"
-                                  onClick={() => setQuestionScore(q.id, num)}
-                                  className={`w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center cursor-pointer transition-all ${
-                                    activeScorecard[q.id] === num
-                                      ? 'bg-emerald-600 text-white shadow-xs'
-                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-slate-200'
-                                  }`}
-                                >
-                                  {num}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Summary Green & Red Flags Cards (Frame 00) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="p-4 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
-                      <span className="font-bold text-xs uppercase text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                        <span>🟢</span>
-                        <span>GREEN FLAGS (STRONG POSITIVE SIGNALS)</span>
-                      </span>
-                      <ul className="text-slate-700 dark:text-slate-300 space-y-1.5 text-xs list-disc pl-4">
-                        <li>Concrete architectural ownership rather than superficial configuration.</li>
-                        <li>Deep fluency in MAXL, EPM Automate, and REST API scheduling.</li>
-                        <li>Proven hands-on experience handling multi-currency and intercompany eliminations.</li>
-                        <li>Articulates precise trade-offs between dynamic vs stored calculations.</li>
-                      </ul>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/60 space-y-2">
-                      <span className="font-bold text-xs uppercase text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                        <span>🔴</span>
-                        <span>RED FLAGS (WATCH-OUTS & RISKS)</span>
-                      </span>
-                      <ul className="text-slate-700 dark:text-slate-300 space-y-1.5 text-xs list-disc pl-4">
-                        <li>Only worked as a report viewer/Smart View consumer with no backend rule writing.</li>
-                        <li>Cannot explain the difference between dense and sparse dimensions.</li>
-                        <li>Vague answers on production release management and change control.</li>
-                        <li>Relies on manual Excel manipulation rather than automated Data Management mapping.</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                <ScreeningQAManager
+                  jd={selectedJd}
+                  interviewKit={interviewKit}
+                  kitLoading={kitLoading}
+                  onRefresh={() => loadInterviewKit(selectedJd.id)}
+                />
               )}
 
               {/* ========================================================================= */}
@@ -1729,7 +1521,7 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={handleCopyKit}
@@ -1747,6 +1539,31 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
                         >
                           <Download className="w-3 h-3" />
                           <span>Export .md</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!interviewKit) return;
+                            const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(interviewKit, null, 2));
+                            const dlAnchorElem = document.createElement('a');
+                            dlAnchorElem.setAttribute('href', dataStr);
+                            dlAnchorElem.setAttribute('download', `Dossier_${selectedJd?.req_code || 'JD'}.json`);
+                            dlAnchorElem.click();
+                          }}
+                          disabled={!interviewKit}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer disabled:opacity-40"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>Export JSON</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          disabled={!interviewKit}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 text-xs font-semibold cursor-pointer disabled:opacity-40"
+                        >
+                          <Printer className="w-3 h-3" />
+                          <span>Print</span>
                         </button>
                       </div>
                     </div>
@@ -1780,8 +1597,29 @@ export const JobWorkspace = ({ onInspectCandidate, onUploadJD }) => {
               Select a requisition from the directory to view specifications.
             </div>
           )}
+          </div>
         </div>
       </div>
+
+      {/* Recruiter Manual Edit Requisition Modal */}
+      <EditJDModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        jd={selectedJd}
+        onSaved={(updated) => {
+          setStructuredJd(updated);
+          fetchJDs();
+          triggerToast('Requisition specifications updated.');
+        }}
+      />
+
+      {/* Version Audit History Modal */}
+      <JDVersionHistoryModal
+        isOpen={isVersionHistoryOpen}
+        onClose={() => setIsVersionHistoryOpen(false)}
+        jdId={selectedJd?.id}
+        reqCode={selectedJd?.req_code}
+      />
     </div>
   );
 };

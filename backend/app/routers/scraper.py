@@ -530,44 +530,26 @@ def export_parsed_resumes_excel(
         headers_simple = [
             "Candidate Name",
             "Phone Number",
-            "Email Address",
-            "Current Location",
-            "Current Designation",
-            "Current Company",
-            "Total Experience",
-            "Technical Skills",
-            "Notice Period",
-            "Education",
-            "Extraction Status",
-            "Source Document",
+            "Mail ID",
+            "Location",
         ]
+        if payload.get("include_match_details"):
+            headers_simple.extend(["Experience (Years)", "Resume Skills"])
         style_headers(ws, headers_simple)
 
         for idx, c in enumerate(candidates, start=1):
             row_num = idx + 1
-            skills_str = ", ".join(c.get("skills", [])) if isinstance(c.get("skills"), list) and c.get("skills") else (c.get("skills") or None)
-
-            exp_val = c.get("experience_years")
-            if exp_val is not None:
-                try:
-                    exp_val = f"{round(float(exp_val), 1)} yrs"
-                except (ValueError, TypeError):
-                    exp_val = None
-
+            skills = c.get("skills") or None
+            if isinstance(skills, list):
+                skills = ", ".join(str(skill) for skill in skills) or None
             row_data = [
                 c.get("name") or None,
                 c.get("phone") or None,
                 c.get("email") or None,
                 c.get("location") or None,
-                c.get("current_role") or None,
-                c.get("current_company") or None,
-                exp_val,
-                skills_str,
-                c.get("notice_period") or None,
-                c.get("education") or None,
-                c.get("extraction_status") or "Validated",
-                c.get("filename") or None,
             ]
+            if payload.get("include_match_details"):
+                row_data.extend([c.get("experience_years"), skills])
             ws.append(row_data)
 
             for col_idx in range(1, len(headers_simple) + 1):
@@ -575,10 +557,10 @@ def export_parsed_resumes_excel(
                 cell.border = thin_border
                 if idx % 2 == 0:
                     cell.fill = alt_fill
-                if col_idx in [8]:  # Skills wrapped
-                    cell.alignment = align_wrap
-                elif col_idx in [2, 7, 9, 11]:  # Phone, Exp, Notice, Status centered
+                if col_idx in [2, 5]:
                     cell.alignment = align_center
+                elif col_idx == 6:
+                    cell.alignment = align_wrap
                 else:
                     cell.alignment = align_left
             ws.row_dimensions[row_num].height = 22
@@ -927,40 +909,25 @@ def export_parsed_resumes_csv(payload: Dict[str, Any]):
     candidates = payload.get("candidates", [])
     output = io.StringIO()
     writer = csv.writer(output, lineterminator="\n")
-    headers = [
-        "Status", "Name", "Phone", "Email", "Location", "Current Role",
-        "Current Company", "Experience (years)", "Relevant Experience (years)",
-        "Notice Period", "Current CTC", "Expected CTC", "Education",
-        "Key Skills", "Certifications", "LinkedIn", "Portfolio", "Source Filename"
-    ]
+    headers = ["Name", "Phone Number", "Mail ID", "Location"]
+    if payload.get("include_match_details"):
+        headers.extend(["Experience (Years)", "Resume Skills"])
     writer.writerow(headers)
 
     for c in candidates:
-        skills_str = ", ".join(c.get("skills", [])) if isinstance(c.get("skills"), list) and c.get("skills") else (c.get("skills") or "")
-        certs_str = ", ".join(c.get("certifications", [])) if isinstance(c.get("certifications"), list) and c.get("certifications") else (c.get("certifications") or "")
-        exp_val = c.get("experience_years") if c.get("experience_years") is not None else ""
-        rel_exp_val = c.get("relevant_experience_years") if c.get("relevant_experience_years") is not None else ""
-
-        writer.writerow([
-            c.get("extraction_status") or "Extracted",
+        row = [
             c.get("name") or "",
             c.get("phone") or "",
             c.get("email") or "",
             c.get("location") or "",
-            c.get("current_role") or "",
-            c.get("current_company") or "",
-            exp_val,
-            rel_exp_val,
-            c.get("notice_period") or "",
-            c.get("current_ctc") or "",
-            c.get("expected_ctc") or "",
-            c.get("education") or "",
-            skills_str,
-            certs_str,
-            c.get("linkedin_url") or "",
-            c.get("portfolio_url") or c.get("github_url") or "",
-            c.get("filename") or "",
-        ])
+        ]
+        if payload.get("include_match_details"):
+            skills = c.get("skills") or ""
+            if isinstance(skills, list):
+                skills = ", ".join(str(skill) for skill in skills)
+            experience = c.get("experience_years")
+            row.extend([experience if experience is not None else "", skills])
+        writer.writerow(row)
 
     return Response(
         content=output.getvalue(),
