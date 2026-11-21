@@ -20,10 +20,9 @@ import {
   ChevronDown,
   FileText,
   CalendarDays,
-  Sparkles,
-  Link2,
   ShieldCheck,
   CheckCircle2,
+  Edit2,
 } from 'lucide-react';
 import { interviewApi } from '../api';
 import { getInterviewCategoryStyle } from '../styles';
@@ -44,16 +43,14 @@ export const RightPanel = ({
   onSelectInterview,
   onClose,
   onOpenAdd,
+  onOpenEdit,
   onOpenReschedule,
   onOpenCancel,
   onOpenInvite,
   onOpenHistory,
-  onOpenReplacement,
   onStatusUpdated,
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedReschedulePortal, setCopiedReschedulePortal] = useState(false);
-  const [generatingReschedule, setGeneratingReschedule] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Expandable sections
@@ -117,6 +114,10 @@ export const RightPanel = ({
   const selectedCategory = selectedInterview
     ? getInterviewCategoryStyle(selectedInterview.round_name, selectedInterview.status)
     : null;
+
+  const sortedDayInterviews = [...dayInterviews].sort((a, b) =>
+    (a.start_time || '').localeCompare(b.start_time || '')
+  );
 
   return (
     <div className="w-80 sm:w-96 shrink-0 border-l border-[#D9DEE8] dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-900 flex flex-col h-full overflow-hidden transition-all shadow-xs">
@@ -310,47 +311,36 @@ export const RightPanel = ({
               </select>
             </div>
 
-            {/* SECTION 6: Replacement Suggestions (F04) */}
-            <button
-              onClick={() => onOpenReplacement && onOpenReplacement(selectedInterview)}
-              className="w-full px-3.5 py-2.5 text-xs font-bold text-[#4F46B8] bg-[#4F46B8]/10 hover:bg-[#4F46B8]/20 rounded-xl border border-purple-300 dark:border-purple-800 flex items-center justify-center gap-2 transition shadow-2xs"
-            >
-              <Sparkles className="w-4 h-4 text-[#4F46B8]" />
-              <span>Find Ranked Replacement (F04)</span>
-            </button>
-
-            {/* SECTION 7: Candidate Rescheduling (F08) */}
+            {/* SECTION 6: Lifecycle & Edit Controls */}
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-[#D9DEE8] dark:border-slate-700 space-y-2.5 shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">
-                Reschedule & Lifecycle Controls
+                Interview Management
               </div>
-              <button
-                onClick={handleCreateReschedulePortal}
-                disabled={generatingReschedule}
-                className="w-full px-3 py-2 text-xs font-bold text-[#3730A3] bg-indigo-50 hover:bg-indigo-100 rounded-xl border border-indigo-200 flex items-center justify-center gap-2 transition shadow-2xs"
-              >
-                {copiedReschedulePortal ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                ) : (
-                  <Link2 className="w-3.5 h-3.5 text-indigo-600" />
-                )}
-                <span>{copiedReschedulePortal ? 'Reschedule Link Copied!' : 'Copy Candidate Reschedule Link (F08)'}</span>
-              </button>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => onOpenEdit && onOpenEdit(selectedInterview)}
+                  className="px-2 py-2 text-xs font-bold text-[#4F46B8] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 rounded-xl border border-purple-200 dark:border-purple-800 flex items-center justify-center gap-1 transition shadow-2xs"
+                  title="Edit details"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-[#4F46B8] dark:text-purple-400" />
+                  <span>Edit</span>
+                </button>
                 <button
                   onClick={() => onOpenReschedule(selectedInterview)}
-                  className="px-3 py-2 text-xs font-bold text-[#92400E] dark:text-amber-200 bg-[#FEF3C7] dark:bg-amber-950/40 hover:bg-amber-200/80 rounded-xl border border-[#FDE68A] dark:border-amber-800 flex items-center justify-center gap-1.5 transition shadow-2xs"
+                  className="px-2 py-2 text-xs font-bold text-[#92400E] dark:text-amber-200 bg-[#FEF3C7] dark:bg-amber-950/40 hover:bg-amber-200/80 dark:hover:bg-amber-900/60 rounded-xl border border-[#FDE68A] dark:border-amber-800 flex items-center justify-center gap-1 transition shadow-2xs"
+                  title="Reschedule session"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Reschedule
+                  <span>Reschedule</span>
                 </button>
                 <button
                   onClick={() => onOpenCancel(selectedInterview)}
-                  className="px-3 py-2 text-xs font-bold text-[#991B1B] dark:text-red-300 bg-[#FEE2E2] dark:bg-red-950/40 hover:bg-red-200/80 rounded-xl border border-[#FCA5A5] dark:border-red-900 flex items-center justify-center gap-1.5 transition shadow-2xs"
+                  className="px-2 py-2 text-xs font-bold text-[#991B1B] dark:text-red-300 bg-[#FEE2E2] dark:bg-red-950/40 hover:bg-red-200/80 dark:hover:bg-red-900/60 rounded-xl border border-[#FCA5A5] dark:border-red-900 flex items-center justify-center gap-1 transition shadow-2xs"
+                  title="Cancel interview"
                 >
                   <AlertOctagon className="w-3.5 h-3.5" />
-                  Cancel
+                  <span>Cancel</span>
                 </button>
               </div>
 
@@ -359,7 +349,7 @@ export const RightPanel = ({
                 className="w-full px-3 py-2 text-xs font-bold text-[#1E40AF] dark:text-blue-300 bg-[#DBEAFE] dark:bg-blue-950/50 hover:bg-blue-200/80 rounded-xl border border-[#BFDBFE] dark:border-blue-800 flex items-center justify-center gap-2 transition shadow-2xs"
               >
                 <Mail className="w-3.5 h-3.5 text-blue-600" />
-                Invitation Preview & .ICS Export
+                <span>Invitation Preview & .ICS Export</span>
               </button>
             </div>
 
@@ -425,7 +415,7 @@ export const RightPanel = ({
               </div>
             ) : (
               <div className="space-y-2.5">
-                {dayInterviews.map((item) => {
+                {sortedDayInterviews.map((item) => {
                   const style = getInterviewCategoryStyle(item.round_name, item.status);
                   const isConfirmed = (item.status || '').toLowerCase() === 'confirmed';
                   return (

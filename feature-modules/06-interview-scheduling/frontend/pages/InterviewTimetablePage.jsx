@@ -21,17 +21,11 @@ import { CATEGORY_LEGEND } from '../styles';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { RightPanel } from '../components/RightPanel';
 import { AddInterviewModal } from '../components/AddInterviewModal';
+import { EditInterviewModal } from '../components/EditInterviewModal';
 import { RescheduleModal } from '../components/RescheduleModal';
 import { CancelInterviewModal } from '../components/CancelInterviewModal';
 import { InvitationPreviewModal } from '../components/InvitationPreviewModal';
 import { InterviewHistoryModal } from '../components/InterviewHistoryModal';
-
-// Mandatory Features Modals
-import { RequestAvailabilityModal } from '../components/RequestAvailabilityModal';
-import { GenerateBookingLinkModal } from '../components/GenerateBookingLinkModal';
-import { ReplacementSuggestionsModal } from '../components/ReplacementSuggestionsModal';
-import { InterviewTemplatesModal } from '../components/InterviewTemplatesModal';
-import { WorkingHoursModal } from '../components/WorkingHoursModal';
 
 const VIEW_OPTIONS = ['Day', '3 Days', 'Week', 'Multi-day'];
 
@@ -58,17 +52,11 @@ export const InterviewTimetablePage = () => {
   // Modal triggers
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [addDefaultSlot, setAddDefaultSlot] = useState({ interviewerId: null, time: '10:00' });
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-
-  // Feature Modals (F01, F03, F04, F05, F07)
-  const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [isReplacementOpen, setIsReplacementOpen] = useState(false);
-  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
-  const [isWorkingHoursOpen, setIsWorkingHoursOpen] = useState(false);
 
   // Compute date range based on view
   const computeDateRange = useCallback(() => {
@@ -194,13 +182,10 @@ export const InterviewTimetablePage = () => {
               </div>
               <div>
                 <h1 className="text-xl font-black text-[#172033] dark:text-white tracking-tight flex items-center gap-2.5">
-                  <span>Interview Scheduling & Coordination</span>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950 text-[#4F46B8] dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                    Ashby Engine Active
-                  </span>
+                  <span>Interview Scheduling & Timetable</span>
                 </h1>
                 <p className="text-xs text-[#64748B] dark:text-slate-400 font-medium mt-0.5">
-                  Multi-interviewer calendar coordination, real-time workload limits, self-booking, and candidate portals.
+                  Multi-interviewer calendar coordination, real-time timetable tracking, and interview round management.
                 </p>
               </div>
             </div>
@@ -378,6 +363,10 @@ export const InterviewTimetablePage = () => {
             setAddDefaultSlot({ interviewerId: null, time: '10:00' });
             setIsAddOpen(true);
           }}
+          onOpenEdit={(item) => {
+            setSelectedInterview(item);
+            setIsEditOpen(true);
+          }}
           onOpenReschedule={(item) => {
             setSelectedInterview(item);
             setIsRescheduleOpen(true);
@@ -393,10 +382,6 @@ export const InterviewTimetablePage = () => {
           onOpenHistory={(item) => {
             setSelectedInterview(item);
             setIsHistoryOpen(true);
-          }}
-          onOpenReplacement={(item) => {
-            setSelectedInterview(item);
-            setIsReplacementOpen(true);
           }}
           onStatusUpdated={(updated) => {
             setSelectedInterview(updated);
@@ -416,6 +401,16 @@ export const InterviewTimetablePage = () => {
         defaultInterviewerId={addDefaultSlot.interviewerId}
         interviewers={interviewers}
         onSuccess={() => {
+          loadData();
+        }}
+      />
+
+      <EditInterviewModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        interview={selectedInterview}
+        onSuccess={(updated) => {
+          setSelectedInterview(updated);
           loadData();
         }}
       />
@@ -450,40 +445,6 @@ export const InterviewTimetablePage = () => {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         interview={selectedInterview}
-      />
-
-      {/* Feature Modals (F01, F03, F04, F05, F07) */}
-      <RequestAvailabilityModal
-        isOpen={isAvailabilityOpen}
-        onClose={() => setIsAvailabilityOpen(false)}
-        candidates={candidates}
-      />
-
-      <GenerateBookingLinkModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        interviewers={interviewers}
-        candidates={candidates}
-      />
-
-      <ReplacementSuggestionsModal
-        isOpen={isReplacementOpen}
-        onClose={() => setIsReplacementOpen(false)}
-        interview={selectedInterview}
-        onReplacementSuccess={() => {
-          loadData();
-        }}
-      />
-
-      <InterviewTemplatesModal
-        isOpen={isTemplatesOpen}
-        onClose={() => setIsTemplatesOpen(false)}
-      />
-
-      <WorkingHoursModal
-        isOpen={isWorkingHoursOpen}
-        onClose={() => setIsWorkingHoursOpen(false)}
-        interviewers={interviewers}
       />
     </div>
   );

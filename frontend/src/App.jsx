@@ -13,11 +13,6 @@ import ProfileScraperPage from './pages/ProfileScraperPage';
 import ClientsPage from './pages/ClientsPage';
 import JDResumeComparisonPage from './pages/JDResumeComparisonPage';
 import InterviewTimetablePage from './pages/InterviewTimetablePage';
-import {
-  CandidateAvailabilityPortal,
-  CandidateBookingPortal,
-  CandidateReschedulePortal,
-} from '../../feature-modules/06-interview-scheduling/frontend';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 /**
@@ -53,10 +48,6 @@ export default function App() {
                 }
               />
             </Route>
-            {/* Public Standalone Candidate Portals (No Admin Sidebar) */}
-            <Route path="/candidate-availability/:token" element={<CandidateAvailabilityPortal />} />
-            <Route path="/candidate-booking/:token" element={<CandidateBookingPortal />} />
-            <Route path="/candidate-reschedule/:token" element={<CandidateReschedulePortal />} />
           </Routes>
         </ErrorBoundary>
       </BrowserRouter>

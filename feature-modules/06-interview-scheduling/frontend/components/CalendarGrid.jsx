@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Plus, Video, MapPin, Coffee, ShieldCheck } from 'lucide-react';
+import { Clock, Plus, Video, MapPin, Coffee, ShieldCheck, Calendar } from 'lucide-react';
 import { getInterviewCategoryStyle } from '../styles';
 
 const START_HOUR = 8;  // 08:00 AM
@@ -58,33 +58,14 @@ export const CalendarGrid = ({
               TIME
             </div>
 
-            {/* Column Headers with F02 Workload Indicators */}
+            {/* Column Headers */}
             {columns.map((col, cIdx) => {
               const inv = col.interviewer || {};
-              const scheduledCount = col.scheduled_count || (col.interviews ? col.interviews.length : 0);
-              const wl = col.workload || {
-                daily_count: scheduledCount,
-                max_daily_interviews: 5,
-                weekly_count: scheduledCount,
-                max_weekly_interviews: 20,
-                load_status: scheduledCount >= 5 ? 'exceeded' : scheduledCount >= 3 ? 'approaching' : 'comfortable',
-              };
-
-              const statusStr = wl.capacity_status || wl.load_status || 'comfortable';
-
-              const statusColor =
-                statusStr === 'exceeded'
-                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800'
-                  : statusStr === 'approaching'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800';
-
-              const dotColor =
-                statusStr === 'exceeded'
-                  ? 'bg-[#DC2626]'
-                  : statusStr === 'approaching'
-                  ? 'bg-[#E58A36]'
-                  : 'bg-[#22A06B]';
+              const scheduledCount = col.scheduled_count !== undefined
+                ? col.scheduled_count
+                : col.interviews
+                ? col.interviews.length
+                : 0;
 
               const isEven = cIdx % 2 === 0;
               return (
@@ -105,10 +86,6 @@ export const CalendarGrid = ({
                           .slice(0, 2)
                           .toUpperCase()}
                       </div>
-                      <span
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${dotColor} border-2 border-white dark:border-slate-900 ring-1 ring-black/5`}
-                        title={`Workload Status: ${statusStr}`}
-                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-black text-[#172033] dark:text-white truncate">
@@ -128,16 +105,15 @@ export const CalendarGrid = ({
                     </div>
                   </div>
 
-                  {/* F02: Workload Indicator Bar & Badge */}
+                  {/* Scheduled Sessions Counter */}
                   <div className="mt-2.5 pt-2 border-t border-[#D9DEE8]/60 dark:border-slate-800 flex items-center justify-between text-[10px]">
-                    <span className={`px-2 py-0.5 rounded-lg font-mono font-bold border flex items-center gap-1.5 shadow-2xs ${statusColor}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                      <span>{wl.daily_count}/{wl.max_daily_interviews} Today</span>
-                      <span className="opacity-40">•</span>
-                      <span>{wl.weekly_count}/{wl.max_weekly_interviews} Wk</span>
+                    <span className="px-2 py-0.5 rounded-lg font-mono font-bold border bg-[#F8FAFC] dark:bg-slate-800 text-[#475569] dark:text-slate-300 border-[#D9DEE8] dark:border-slate-700 flex items-center gap-1.5 shadow-2xs">
+                      <Calendar className="w-3 h-3 text-[#4F46B8]" />
+                      <span>{scheduledCount} Session{scheduledCount === 1 ? '' : 's'}</span>
                     </span>
-                    <span className="text-[10px] font-extrabold capitalize tracking-tight" style={{ color: dotColor.replace('bg-', '') }}>
-                      {statusStr}
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>Active</span>
                     </span>
                   </div>
                 </div>
