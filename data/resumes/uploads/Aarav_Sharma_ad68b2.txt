@@ -1,0 +1,6 @@
+Aarav Sharma
+Senior Python & AI Engineer
+Email: aarav.ad68b2@talentra.ai
+Phone: +91 98888 77777
+Experience: 7 Years
+Skills: Python, FastAPI, PyTorch, LangChain, Docker

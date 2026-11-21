@@ -11,6 +11,7 @@ export default {
     "./index.html",
     // Include all JavaScript and JSX source files.
     "./src/**/*.{js,ts,jsx,tsx}",
+    "../feature-modules/**/*.{js,ts,jsx,tsx}",
   ],
   // Extend default Tailwind theme tokens.
   theme: {

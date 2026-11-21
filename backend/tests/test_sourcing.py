@@ -216,7 +216,7 @@ def test_sourcing_api_endpoints(db):
         "/api/v1/sourcing/export",
         json={"search_id": search_id, "candidate_ids": [first_cand_id]},
     )
-    assert export_res.status_code == 200
+    assert export_res.status_code == 200, f"Failed: {export_res.text}"
     export_id = export_res.json()["export"]["export_id"]
 
     # 6. List Exports

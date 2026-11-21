@@ -148,7 +148,7 @@ def get_current_user_optional(
         admin_user = User(
             email="admin@talentra.ai",
             hashed_password=hash_password("Talentra2026!"),
-            full_name="Talentra Administrator",
+            full_name="Recruiter 1",
             role=UserRole.ADMINISTRATOR,
             is_active=True,
             team="Talent Operations",

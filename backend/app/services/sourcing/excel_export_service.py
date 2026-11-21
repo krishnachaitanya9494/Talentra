@@ -14,6 +14,7 @@ TALENTRA/exports/{JD_Title}/matched_candidates.xlsx
 import os
 import re
 import json
+import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
@@ -436,8 +437,9 @@ class ExcelExportService:
         file_size = os.path.getsize(str(target_path))
 
         # Record in CandidateExport table
+        unique_suffix = uuid.uuid4().hex[:6].upper()
         export_rec = CandidateExport(
-            export_code=f"EXP-{timestamp_str}",
+            export_code=f"EXP-{timestamp_str}-{unique_suffix}",
             search_id=search.id,
             jd_id=search.jd_id,
             jd_title=search.jd_title,

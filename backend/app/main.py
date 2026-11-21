@@ -21,6 +21,7 @@ from backend.app.routers.outreach import router as outreach_router
 from backend.app.routers.analytics import router as analytics_router
 from backend.app.routers.sourcing import router as sourcing_router
 from backend.app.routers.scraper import router as scraper_router
+from backend.app.routers.interview_timetable import router as interview_timetable_router
 from backend.app.routers.interviews import router as interviews_router
 from backend.app.routers.clients import router as clients_router
 from backend.app.routers.comparison import router as comparison_router
@@ -79,6 +80,8 @@ app.include_router(analytics_router)
 app.include_router(sourcing_router)
 # Mount the candidate profile web scraper router (Apify reference)
 app.include_router(scraper_router)
+# Mount the interview timetable & multi-interviewer scheduling router (Module 06)
+app.include_router(interview_timetable_router)
 # Mount the interview scheduling & evaluation stages router
 app.include_router(interviews_router)
 # Mount the clients & accounts workspace router

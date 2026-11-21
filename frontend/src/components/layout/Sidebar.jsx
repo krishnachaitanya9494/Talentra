@@ -18,6 +18,7 @@ import {
   Moon,
   Info,
   GitCompare,
+  CalendarDays,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -86,6 +87,13 @@ export const Sidebar = ({
           label: 'Sourcing & Excel',
           icon: FileSpreadsheet,
           badge: null,
+          isFunctional: true,
+        },
+        {
+          id: '/interview-timetable',
+          label: 'Interview Timetable',
+          icon: CalendarDays,
+          badge: 'New',
           isFunctional: true,
         },
       ],

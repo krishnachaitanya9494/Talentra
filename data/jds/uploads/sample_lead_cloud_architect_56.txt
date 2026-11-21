@@ -1,0 +1,4 @@
+LEAD CLOUD ARCHITECT
+Experience: 10 years
+Key Responsibilities: Design multi-cloud infrastructure on AWS and GCP.
+Required Skills: AWS, GCP, Terraform, Kubernetes, Python
