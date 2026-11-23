@@ -36,8 +36,9 @@ def extract_sections_from_text(raw_text: str) -> Dict[str, Any]:
     Handles headings like:
     - SUMMARY / OVERVIEW / ABOUT THE ROLE
     - RESPONSIBILITIES / WHAT YOU WILL DO / KEY ACCOUNTABILITIES
-    - REQUIREMENTS / QUALIFICATIONS / SKILLS
-    - EDUCATION / DEGREES
+    - DELIVERABLES / OUTCOMES / DELIVERABLE
+    - REQUIREMENTS / QUALIFICATIONS / SKILLS / MANDATORY SKILLS / PREFERRED SKILLS
+    - EDUCATION / DEGREES / ACADEMIC
     - CERTIFICATIONS
     """
     lines = [l.strip() for l in raw_text.splitlines() if l.strip()]
@@ -49,17 +50,18 @@ def extract_sections_from_text(raw_text: str) -> Dict[str, Any]:
     cert_lines = []
     domain_lines = []
     pref_lines = []
+    qual_lines = []
     
     current_section = "summary"
     for line in lines:
-        lower = line.lower()
-        if re.search(r"^(responsibilit|key responsibilit|what you'll do|core responsibilit)", lower):
+        lower = line.lower().strip()
+        if re.search(r"^(responsibilit|key responsibilit|what you'll do|core responsibilit|duties)", lower):
             current_section = "responsibilities"
             continue
-        elif re.search(r"^(deliverable|lifecycle deliverable|functional deliverable)", lower):
+        elif re.search(r"^(deliverable|lifecycle deliverable|functional deliverable|key deliverables|outcomes)", lower):
             current_section = "deliverables"
             continue
-        elif re.search(r"^(education|educational qualification|academic requirement)", lower):
+        elif re.search(r"^(education|educational qualification|academic requirement|education & experience)", lower):
             current_section = "education"
             continue
         elif re.search(r"^(certification|certifications|credentials|licenses)", lower):
@@ -68,15 +70,21 @@ def extract_sections_from_text(raw_text: str) -> Dict[str, Any]:
         elif re.search(r"^(domain|industry requirement|business domain)", lower):
             current_section = "domain"
             continue
-        elif re.search(r"^(preferred|nice to have|bonus points|preferred qualification)", lower):
+        elif re.search(r"^(preferred|nice to have|bonus points|preferred qualification|preferred skills)", lower):
             current_section = "preferred"
             continue
-        elif re.search(r"^(summary|about the role|overview|position overview)", lower):
+        elif re.search(r"^(qualification|qualifications|requirements|basic qualifications|minimum qualifications)", lower):
+            current_section = "qualifications"
+            continue
+        elif re.search(r"^(summary|about the role|overview|position overview|job summary|role overview)", lower):
             current_section = "summary"
+            continue
+        elif re.search(r"^(about|equal opportunity|diversity|benefits|compensation)", lower):
+            current_section = "other"
             continue
 
         clean_bullet = re.sub(r"^[\*\-\•\d\.\)]\s*", "", line).strip()
-        if not clean_bullet:
+        if not clean_bullet or len(clean_bullet) < 5:
             continue
 
         if current_section == "summary":
@@ -93,6 +101,38 @@ def extract_sections_from_text(raw_text: str) -> Dict[str, Any]:
             domain_lines.append(clean_bullet)
         elif current_section == "preferred":
             pref_lines.append(clean_bullet)
+        elif current_section == "qualifications":
+            qual_lines.append(clean_bullet)
+            # Route degree and academic lines to education
+            if re.search(r"(degree|bachelor|master|phd|b\.?tech|b\.?e|m\.?tech|m\.?s|computer science|engineering|equivalent)", clean_bullet, re.IGNORECASE):
+                edu_lines.append(clean_bullet)
+            elif re.search(r"(certified|certification|license|aws certified|cisco|azure)", clean_bullet, re.IGNORECASE):
+                cert_lines.append(clean_bullet)
+
+    # Intelligently split responsibilities and deliverables if deliverables was not a distinct heading
+    if responsibilities and not deliverables:
+        if len(responsibilities) >= 6:
+            # Deliverable-oriented keywords
+            core_resp = []
+            func_deliv = []
+            for item in responsibilities:
+                item_lower = item.lower()
+                if any(k in item_lower for k in ["coordinate", "document", "maintain", "manage defect", "report", "track", "deliver", "verify bug"]):
+                    func_deliv.append(item)
+                else:
+                    core_resp.append(item)
+            
+            if len(func_deliv) >= 2 and len(core_resp) >= 2:
+                responsibilities = core_resp
+                deliverables = func_deliv
+            else:
+                mid = (len(responsibilities) + 1) // 2
+                deliverables = responsibilities[mid:]
+                responsibilities = responsibilities[:mid]
+        elif len(responsibilities) >= 3:
+            # Split into 2 and 1
+            deliverables = [responsibilities[-1]]
+            responsibilities = responsibilities[:-1]
 
     return {
         "summary": " ".join(summary_lines[:5]) if summary_lines else "",
@@ -102,6 +142,7 @@ def extract_sections_from_text(raw_text: str) -> Dict[str, Any]:
         "certifications": cert_lines,
         "domain": domain_lines,
         "preferred": pref_lines,
+        "qualifications": qual_lines,
     }
 
 

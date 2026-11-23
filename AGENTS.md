@@ -29,4 +29,9 @@ Take the first option that fully works:
 
 Never cut: validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs, anything the user asked for.
 
+## Mandatory Design Standard: Unslop UI Architecture
+All frontend work across TALENTRA must adhere to the Unslop design specification located at `C:\Users\Krishna Chaitanya\Downloads\Unslop_SKILL.md` and `.agents/rules/unslop.md`.
+- Follow the 9 passes in strict order: Spacing (4px grid), Color (neutral ramp, quiet chrome, no gradients/glows), Icons (Lucide line icons, no emojis), Copy (plain factual, no hype), Typography (tabular figures, sentence case, weights 400-600), Layout (enterprise proportions), Details (nested radii, hairlines), Visuals (real hiring materials), Motion (purposeful 100ms transitions, no looping pulses).
+- The Interview Timetable module (`/interview-timetable`) is STRICTLY LOCKED and must never be altered.
+
 (Yes, this file also applies to agents working on the ponytail repo itself. Especially to them.)

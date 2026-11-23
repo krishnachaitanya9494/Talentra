@@ -168,24 +168,24 @@ export const InterviewTimetablePage = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden animate-fade-in bg-[#F5F6FA] dark:bg-slate-950">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-surface-50 dark:bg-surface-darkCanvas">
       {/* =========================================================================
           TOP HEADER - ASHBY ENTERPRISE COORDINATION SYSTEM
          ========================================================================= */}
-      <div className="px-6 py-4 shrink-0 border-b border-[#D9DEE8] dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors shadow-2xs">
+      <div className="px-6 py-4 shrink-0 border-b border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkCard">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Title and description */}
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#4F46B8] text-white flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-lg bg-brand-700 text-white flex items-center justify-center">
                 <CalendarDays className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-black text-[#172033] dark:text-white tracking-tight flex items-center gap-2.5">
-                  <span>Interview Scheduling & Timetable</span>
+                <h1 className="text-xl font-semibold text-navy-900 dark:text-white flex items-center gap-2.5">
+                  <span>Interview timetable</span>
                 </h1>
-                <p className="text-xs text-[#64748B] dark:text-slate-400 font-medium mt-0.5">
-                  Multi-interviewer calendar coordination, real-time timetable tracking, and interview round management.
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  Review scheduled interviews and manage interview rounds
                 </p>
               </div>
             </div>
@@ -196,26 +196,26 @@ export const InterviewTimetablePage = () => {
             {/* Today Button */}
             <button
               onClick={handleToday}
-              className="h-9 px-3.5 text-xs font-bold text-[#172033] dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-[#EEF1F6] dark:hover:bg-slate-700 rounded-xl border border-[#D9DEE8] dark:border-slate-700 shadow-2xs transition flex items-center justify-center"
+              className="h-9 px-3.5 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-surface-darkHover hover:bg-slate-50 dark:hover:bg-surface-dark rounded-lg border border-slate-200 dark:border-surface-darkBorder transition-colors flex items-center justify-center"
             >
               Today
             </button>
 
             {/* Prev / Next Range Buttons */}
-            <div className="h-9 flex items-center rounded-xl border border-[#D9DEE8] dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs overflow-hidden">
+            <div className="h-9 flex items-center rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover overflow-hidden">
               <button
                 onClick={handlePrevRange}
-                className="h-full px-2.5 text-[#64748B] hover:text-[#172033] dark:text-slate-400 dark:hover:text-white hover:bg-[#EEF1F6] dark:hover:bg-slate-700 transition flex items-center justify-center"
+                className="h-full px-2.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-colors flex items-center justify-center"
                 title="Previous range"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="h-full px-3 text-xs font-mono font-extrabold text-[#172033] dark:text-white border-x border-[#D9DEE8] dark:border-slate-700 flex items-center justify-center bg-[#F8FAFC] dark:bg-slate-900">
+              <span className="h-full px-3 text-sm font-medium text-navy-900 dark:text-white border-x border-slate-200 dark:border-surface-darkBorder flex items-center justify-center bg-slate-50 dark:bg-surface-dark">
                 {currentDate}
               </span>
               <button
                 onClick={handleNextRange}
-                className="h-full px-2.5 text-[#64748B] hover:text-[#172033] dark:text-slate-400 dark:hover:text-white hover:bg-[#EEF1F6] dark:hover:bg-slate-700 transition flex items-center justify-center"
+                className="h-full px-2.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-colors flex items-center justify-center"
                 title="Next range"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -223,15 +223,15 @@ export const InterviewTimetablePage = () => {
             </div>
 
             {/* View Selector (Day, 3 Days, Week, Multi-day) */}
-            <div className="h-9 flex items-center rounded-xl p-1 bg-[#EEF1F6] dark:bg-slate-800 border border-[#D9DEE8] dark:border-slate-700">
+            <div className="h-9 flex items-center rounded-lg p-1 bg-slate-100 dark:bg-surface-darkHover border border-slate-200 dark:border-surface-darkBorder">
               {VIEW_OPTIONS.map((v) => (
                 <button
                   key={v}
                   onClick={() => setSelectedView(v)}
                   className={`h-full px-3 text-xs font-bold rounded-lg transition flex items-center justify-center ${
                     selectedView === v
-                      ? 'bg-white dark:bg-slate-900 text-[#172033] dark:text-white shadow-xs'
-                      : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033]'
+                      ? 'bg-white dark:bg-surface-dark text-brand-700 dark:text-brand-300'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
                   {v}
@@ -243,10 +243,10 @@ export const InterviewTimetablePage = () => {
             <button
               onClick={loadData}
               disabled={loading}
-              className="h-9 w-9 text-[#64748B] hover:text-[#172033] dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 rounded-xl border border-[#D9DEE8] dark:border-slate-700 shadow-2xs transition flex items-center justify-center shrink-0"
+              className="h-9 w-9 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-surface-darkHover rounded-lg border border-slate-200 dark:border-surface-darkBorder transition-colors flex items-center justify-center shrink-0"
               title="Refresh Timetable"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#4F46B8]' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-700' : ''}`} />
             </button>
 
             {/* Primary Add Interview Action */}
@@ -255,39 +255,39 @@ export const InterviewTimetablePage = () => {
                 setAddDefaultSlot({ interviewerId: null, time: '10:00' });
                 setIsAddOpen(true);
               }}
-              className="h-9 px-4 text-xs font-bold text-white bg-[#22A06B] hover:bg-[#1B8055] active:bg-[#146040] rounded-xl shadow-xs hover:shadow transition flex items-center gap-1.5 shrink-0"
+              className="h-9 px-4 text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 active:bg-brand-900 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
             >
               <Plus className="w-4 h-4 text-white" />
-              <span>+ Add Interview</span>
+              <span>Add interview</span>
             </button>
           </div>
         </div>
 
         {/* Secondary Filter & Round Category Bar */}
-        <div className="mt-3.5 pt-3 border-t border-[#D9DEE8]/70 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+        <div className="mt-3.5 pt-3 border-t border-slate-200 dark:border-surface-darkBorder flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
             {/* Candidate Search */}
-            <div className="relative flex-1 max-w-xs">
+            <div className="relative w-full sm:flex-1 sm:max-w-xs">
               <input
                 type="text"
                 placeholder="Search candidate, role or round..."
                 value={candidateSearch}
                 onChange={(e) => setCandidateSearch(e.target.value)}
-                className="w-full h-9 text-xs py-1.5 pl-8 pr-3 rounded-xl border border-[#D9DEE8] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#172033] dark:text-white placeholder:text-[#64748B] focus:ring-2 focus:ring-[#4F46B8]/20 focus:border-[#4F46B8] shadow-2xs transition"
+                className="w-full h-9 text-sm py-1.5 pl-8 pr-3 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-navy-900 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-brand-700/20 focus:border-brand-700 transition-colors"
               />
-              <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-2.5 top-2.5 pointer-events-none" />
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 pointer-events-none" />
             </div>
 
             {/* Interviewer Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-[#475569] dark:text-slate-400 flex items-center gap-1 uppercase tracking-wider">
-                <Users className="w-3.5 h-3.5 text-[#4F46B8]" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1 whitespace-nowrap">
+                <Users className="w-3.5 h-3.5 text-brand-700 dark:text-brand-300" />
                 Interviewer:
               </span>
               <select
                 value={interviewerFilter}
                 onChange={(e) => setInterviewerFilter(e.target.value)}
-                className="h-9 text-xs py-1.5 px-3 rounded-xl border border-[#D9DEE8] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#172033] dark:text-white font-semibold focus:ring-2 focus:ring-[#4F46B8]/20 focus:border-[#4F46B8] shadow-2xs transition"
+                className="w-full sm:w-auto h-9 text-sm py-1.5 px-3 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-navy-900 dark:text-white font-medium focus:ring-2 focus:ring-brand-700/20 focus:border-brand-700"
               >
                 <option value="">All Panel Evaluators ({interviewers.length})</option>
                 {interviewers.map((inv) => (
@@ -301,7 +301,7 @@ export const InterviewTimetablePage = () => {
 
           {/* Interactive Category Legend Filter */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mr-1">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mr-1">
               Rounds:
             </span>
             {CATEGORY_LEGEND.map((cat) => {

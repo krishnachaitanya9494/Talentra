@@ -302,6 +302,7 @@ class RescheduleResolutionRequest(BaseModel):
 class InvitationPreviewResponse(BaseModel):
     subject: str
     body_text: str
+    body_plain: Optional[str] = None
     body_html: str
     ics_content: str
     candidate_email: Optional[str]

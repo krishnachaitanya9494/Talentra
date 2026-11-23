@@ -428,6 +428,36 @@ export async function updateStructuredJD(jdId, payload) {
   return response.data;
 }
 
+export async function pasteJobDescription(payload) {
+  const response = await apiClient.post('/api/v1/jds/paste', payload);
+  return response.data;
+}
+
+export async function askJDAssistant(jdId, payload) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/assistant`, payload);
+  return response.data;
+}
+
+export async function generateScreeningQuestions(jdId, payload = {}) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/screening/generate`, payload);
+  return response.data;
+}
+
+export async function saveScreeningQuestions(jdId, payload) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/screening/save`, payload);
+  return response.data;
+}
+
+export async function getSavedScreeningQuestions(jdId) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/screening/questions`);
+  return response.data.questions || [];
+}
+
+export async function getJDCandidates(jdId, params = {}) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/candidates`, { params });
+  return response.data;
+}
+
 export async function getJDValidation(jdId) {
   const response = await apiClient.get(`/api/v1/jds/${jdId}/validation`);
   return response.data;
@@ -447,6 +477,21 @@ export async function getJDVersionDiff(jdId, verA, verB) {
   const response = await apiClient.get(`/api/v1/jds/${jdId}/versions/diff`, {
     params: { ver_a: verA, ver_b: verB },
   });
+  return response.data;
+}
+
+export async function getJDTemplates(jdId) {
+  const response = await apiClient.get(`/api/v1/jds/${jdId}/templates`);
+  return response.data.templates || [];
+}
+
+export async function saveJDTemplate(jdId, payload) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/templates`, payload);
+  return response.data;
+}
+
+export async function bulkAssociateCandidates(jdId, payload) {
+  const response = await apiClient.post(`/api/v1/jds/${jdId}/candidates/bulk-associate`, payload);
   return response.data;
 }
 
@@ -491,6 +536,71 @@ export async function getComparisonTargets() {
 
 export async function analyzeComparison(payload) {
   const response = await apiClient.post('/api/v1/comparison/analyze', payload);
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Enterprise Recruitment Agent API (CompanyAI 2.0 Blueprint)
+// ---------------------------------------------------------------------------
+
+export async function sendAgentMessage(sessionId, message) {
+  const response = await apiClient.post('/api/v1/agent/chat', { session_id: sessionId, message });
+  return response.data;
+}
+
+export async function getAgentTools() {
+  const response = await apiClient.get('/api/v1/agent/tools');
+  return response.data;
+}
+
+export async function getAgentApprovals(status = null) {
+  const params = status ? { status } : {};
+  const response = await apiClient.get('/api/v1/agent/approvals', { params });
+  return response.data;
+}
+
+export async function getRecruiterToken() {
+  let token = typeof window !== 'undefined' ? localStorage.getItem('talentra_jwt_token') : null;
+  if (!token) {
+    try {
+      const authRes = await apiClient.post('/api/v1/agent/auth/token', {
+        email: 'admin@talentra.ai',
+        password: 'Talentra2026!',
+      });
+      if (authRes.data?.access_token) {
+        token = authRes.data.access_token;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('talentra_jwt_token', token);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not authenticate recruiter session token:', e);
+    }
+  }
+  return token;
+}
+
+export async function actionAgentApproval(approvalId, action, resolvedBy = 'Recruiter Admin') {
+  const token = await getRecruiterToken();
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const response = await apiClient.post(
+    `/api/v1/agent/approvals/${approvalId}/action`,
+    {
+      action,
+      resolved_by: resolvedBy,
+    },
+    { headers }
+  );
+  return response.data;
+}
+
+export async function getAgentTraces(limit = 20) {
+  const response = await apiClient.get('/api/v1/agent/traces', { params: { limit } });
+  return response.data;
+}
+
+export async function syncAgentEmbeddings() {
+  const response = await apiClient.post('/api/v1/agent/embeddings/sync');
   return response.data;
 }
 

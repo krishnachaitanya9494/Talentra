@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   HelpCircle,
   Plus,
@@ -14,60 +14,29 @@ import {
   Sparkles,
   FileText,
 } from 'lucide-react';
+import { getSavedScreeningQuestions, saveScreeningQuestions } from '../../services/api';
 
-export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) => {
-  const defaultQuestions = interviewKit?.screening_questions || [
-    {
-      id: 'sq-1',
-      category: 'Architecture & Implementation',
-      recommended_stage: 'Technical Round 1',
-      difficulty: 'Advanced',
-      question:
-        'Can you walk through an end-to-end implementation of Oracle Planning and Budgeting Cloud Service (PBCS) or on-premise Hyperion where you designed calculation scripts and dimension hierarchies?',
-      model_answer:
-        'In an end-to-end PBCS implementation, I model the multidimensional outline in Essbase, strictly separating Dense dimensions from Sparse dimensions to optimize block size and avoid paging. I author calculation scripts in Calculation Manager using targeted FIX blocks with @CALCMODE(BLOCK) and @ISMBR.',
-      expected_signals: [
-        'Distinguishes Essbase block storage (BSO) vs aggregate storage (ASO) and Dense vs Sparse dimensions.',
-        'Explains calculation script structure: FIX statements, @CALCMODE(BLOCK), avoiding cross-dimensional operators.',
-        'Details metadata management, Smart View validation, and automated LCM snapshot migration.',
-      ],
-      rubric: {
-        below_bar: 'Confuses Dense and Sparse dimensions; only worked as an end-user in Smart View.',
-        meets_bar: 'Explains block storage, author calculation scripts with FIX blocks, and loads data via Data Management.',
-        exceeds_bar: 'Masters Essbase memory cache tuning, complex allocation algorithms, LCM automation, and multi-currency consolidation.',
-      },
-      red_flags: [
-        'Only cites textbook definitions without real project examples.',
-        'Cannot explain why a calculation script causes memory exhaustion or endless loops.',
-      ],
-    },
-    {
-      id: 'sq-2',
-      category: 'Practical Problem Solving & Tuning',
-      recommended_stage: 'Technical Deep Dive',
-      difficulty: 'Expert',
-      question:
-        'How do you troubleshoot and tune a long-running calculation script or consolidation job in Essbase?',
-      model_answer:
-        'First, I examine the Essbase application log (essbase.log) to check elapsed execution time, block creation rates, and cache hit ratios. Next, I verify Dense/Sparse dimension configuration, set CALCLOCKBLOCK HIGH, verify intelligent calculation status, and tune index/data caches in essbase.cfg.',
-      expected_signals: [
-        'Dense/Sparse dimension restructuring and avoiding bloated block sizes.',
-        'Memory cache hierarchy: Index cache, Data cache, and Data file cache configuration.',
-        'Script optimization: CALCLOCKBLOCK commands, SET UPDATECALC ON, and scoped FIX ranges.',
-      ],
-      rubric: {
-        below_bar: 'Suggests restarting server without telemetry.',
-        meets_bar: 'Checks essbase.log, verifies Dense/Sparse layout, and tunes basic calculation script FIX boundaries.',
-        exceeds_bar: 'Performs deep cache sizing, calculates exact block size in bytes, and re-sequences dimensions by sparsity.',
-      },
-      red_flags: [
-        'Never heard of essbase.cfg or Essbase application logs.',
-        'Does not understand what constitutes a database block or how blocks are indexed.',
-      ],
-    },
-  ];
-
-  const [questions, setQuestions] = useState(defaultQuestions);
+export const ScreeningQAManager = ({ jd, interviewKit, kitLoading }) => {
+  const [questions, setQuestions] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
+  useEffect(() => {
+    let active = true;
+    setQuestions(interviewKit?.screening_questions || []);
+    setSaveMessage('');
+    setSaveError('');
+    if (jd?.id) {
+      getSavedScreeningQuestions(jd.id)
+        .then(({ questions: stored }) => {
+          if (active && stored.length) setQuestions(stored);
+        })
+        .catch((err) => {
+          if (active) setSaveError(err.response?.data?.detail || 'Saved screening questions could not be loaded.');
+        });
+    }
+    return () => { active = false; };
+  }, [jd?.id, interviewKit]);
   const [questionFilter, setQuestionFilter] = useState('All');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
   const [copiedQAId, setCopiedQAId] = useState(null);
@@ -106,6 +75,25 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
     setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
+  const handleApproveQA = (id) => {
+    setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, review_status: 'approved' } : q));
+  };
+
+  const handleSaveQuestions = async () => {
+    if (!jd?.id) return;
+    setSaving(true);
+    setSaveMessage('');
+    setSaveError('');
+    try {
+      await saveScreeningQuestions(jd.id, { questions });
+      setSaveMessage('Questions saved. Drafts remain unapproved.');
+    } catch (err) {
+      setSaveError(err.response?.data?.detail || 'Questions could not be saved.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openEditModal = (q) => {
     setModalMode('edit');
     setEditingQId(q.id);
@@ -127,6 +115,7 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
     if (modalMode === 'add') {
       const newQ = {
         id: `sq-${Date.now()}`,
+        review_status: 'draft',
         category: formCategory,
         recommended_stage: formStage,
         difficulty: formDifficulty,
@@ -154,6 +143,7 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
                 model_answer: formModelAnswer,
                 expected_signals: signalsArr,
                 red_flags: redFlagsArr,
+                review_status: 'draft',
               }
             : q
         )
@@ -243,6 +233,15 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
             </button>
             <button
               type="button"
+              onClick={handleSaveQuestions}
+              disabled={saving || !questions.length}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-800 dark:text-emerald-300 font-semibold cursor-pointer disabled:opacity-40"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>{saving ? 'Saving…' : 'Save'}</span>
+            </button>
+            <button
+              type="button"
               onClick={handleExportMarkdown}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder text-slate-700 dark:text-slate-300 hover:bg-slate-50 font-semibold cursor-pointer"
             >
@@ -267,6 +266,11 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
             </button>
           </div>
         </div>
+        {(saveMessage || saveError) && (
+          <p role={saveError ? 'alert' : 'status'} className={`text-xs ${saveError ? 'text-rose-600' : 'text-emerald-700'}`}>
+            {saveError || saveMessage}
+          </p>
+        )}
 
         {/* Dual Filter Bars */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
@@ -438,7 +442,12 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
 
       {/* List of Detailed Question Cards */}
       <div className="space-y-4">
-        {filteredQuestions.map((q, idx) => (
+        {!filteredQuestions.length ? (
+          <div className="p-6 text-center text-sm text-slate-500 rounded-xl border border-dashed border-slate-300 dark:border-surface-darkBorder">
+            {kitLoading ? 'Loading screening questions…' : 'No saved questions for this requisition. Add a question to start a recruiter-reviewed set.'}
+            <p className="mt-2 text-xs">Nemotron generation is unavailable for hosted free inference with confidential job content.</p>
+          </div>
+        ) : filteredQuestions.map((q, idx) => (
           <div
             key={q.id || idx}
             className="p-5 rounded-2xl border border-slate-200/90 dark:border-surface-darkBorder bg-white dark:bg-surface-darkCard shadow-subtle space-y-3.5"
@@ -458,6 +467,14 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
               </div>
 
               <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${q.review_status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                  {q.review_status === 'approved' ? 'Approved' : 'Draft · approval needed'}
+                </span>
+                {q.review_status !== 'approved' && (
+                  <button type="button" onClick={() => handleApproveQA(q.id)} className="text-[10px] font-semibold text-emerald-700 hover:underline">
+                    Approve
+                  </button>
+                )}
                 <span className="px-2 py-0.2 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
                   {q.difficulty || 'Advanced'}
                 </span>
@@ -497,15 +514,15 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
             </div>
 
             {/* The Question in Quotes */}
-            <p className="text-xs font-bold text-navy-900 dark:text-slate-100 leading-relaxed italic bg-slate-50/70 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-200/60 dark:border-surface-darkBorder">
+            <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-relaxed bg-slate-50/70 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-200/60 dark:border-surface-darkBorder">
               "{q.question}"
             </p>
 
             {/* Full Ideal Model Answer */}
-            <div className="p-3.5 rounded-xl bg-indigo-50/30 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-1.5">
-              <span className="font-bold text-[10px] uppercase text-indigo-800 dark:text-indigo-300 flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-indigo-600" />
-                <span>IDEAL MODEL TECHNICAL ANSWER</span>
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+              <span className="font-medium text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <FileCheck2 className="w-3.5 h-3.5" />
+                <span>Model evaluation answer</span>
               </span>
               <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
                 {q.model_answer}
@@ -514,8 +531,8 @@ export const ScreeningQAManager = ({ jd, interviewKit, kitLoading, onRefresh }) 
 
             {/* Expected Positive Signals (Interactive Checklist) */}
             <div className="space-y-1.5 pt-1">
-              <span className="font-bold text-[10px] uppercase text-slate-400 block">
-                EXPECTED SIGNALS & KEY PHRASES (CHECKLIST):
+              <span className="font-medium text-[10px] text-slate-500 block">
+                Expected evaluation signals
               </span>
               <div className="space-y-1">
                 {(q.expected_signals || []).map((signal, sIdx) => {

@@ -969,7 +969,7 @@ class SkillClassificationService:
                 "is_alias": norm["is_alias"],
             }
             mandatory_list.append(item)
-            categorized[norm["category"]].append(item)
+            categorized.setdefault(norm["category"], []).append(item)
 
         # Process Preferred Skills
         for raw in raw_preferred:
@@ -990,7 +990,7 @@ class SkillClassificationService:
                 "is_alias": norm["is_alias"],
             }
             preferred_list.append(item)
-            categorized[norm["category"]].append(item)
+            categorized.setdefault(norm["category"], []).append(item)
 
         return {
             "mandatory_skills": mandatory_list,
@@ -1029,7 +1029,7 @@ def categorize_skills_list(skills_list: List[str], default_mandatory: bool = Tru
             "is_mandatory": default_mandatory,
             "is_alias": norm["is_alias"],
         }
-        categorized[norm["category"]].append(item)
+        categorized.setdefault(norm["category"], []).append(item)
     return {k: v for k, v in categorized.items() if v}
 
 

@@ -306,7 +306,7 @@ def parse_repository_resumes_batch(db: Session, limit: Optional[int] = None) -> 
     for doc in resume_docs:
         try:
             processed_count += 1
-            parsed = ResumeParser.parse(
+            parsed = ResumeParser.parse_with_ai(
                 text=doc.raw_text or "",
                 filename=doc.original_filename,
                 resume_doc_id=doc.doc_id,

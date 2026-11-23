@@ -1,0 +1,35 @@
+Job ID: Use 117159-11-4
+CTC: 40 LPA (Max)
+Work Mode: Hybrid (Weekly 3 days WFO)
+Interview: 2- 3 rounds Virtual Interview. 
+Yrs. Of exp required: 9-12 Yrs
+Job Summary:
+We are seeking a highly skilled and motivated Senior Software Engineer with a strong focus on Salesforce development. The ideal candidate will possess in-depth knowledge of Salesforce Apex, including Batch, Schedulers, Test Classes, Triggers, SOQL, and SOSL. This role requires a proactive individual who can contribute to the design, development, and implementation of innovative software solutions that meet our business needs.
+Responsibilities:
+•	Design, develop, and maintain Salesforce applications using Apex, ensuring high performance and responsiveness.
+•	Implement Batch processes and Schedulers to automate and optimize data processing tasks.
+•	Create and maintain Test Classes to ensure code quality and adherence to best practices.
+•	Develop Triggers to support business logic and data integrity within Salesforce.
+•	Utilize SOQL and SOSL for efficient data retrieval and manipulation.
+•	Collaborate with cross-functional teams to gather requirements and translate them into technical specifications.
+•	Participate in code reviews and provide constructive feedback to peers.
+•	Stay updated with Salesforce releases and best practices to continuously improve development processes.
+•	Document technical specifications, processes, and workflows for future reference.
+•	Provide support and troubleshooting for existing Salesforce applications and integrations.
+Mandatory Skills:
+•	Strong proficiency in Salesforce Apex, including Batch, Schedulers, Test Classes, Triggers, SOQL, and SOSL.
+•	Experience with Salesforce development lifecycle and deployment processes.
+•	Solid understanding of Salesforce data model and architecture.
+•	Ability to write clean, maintainable, and efficient code.
+•	Familiarity with Salesforce best practices and design patterns.
+Preferred Skills:
+•	Experience with Lightning components and Salesforce UI development.
+•	Knowledge of integration techniques with external systems.
+•	Familiarity with Agile methodologies and tools.
+•	Understanding of DevOps practices in Salesforce development.
+•	Experience with Salesforce certifications (e.g., Salesforce Developer, Salesforce Architect) is a plus.
+Qualifications:
+•	Bachelor's degree in Computer Science, Information Technology, or a related field.
+•	Strong analytical and problem-solving skills.
+•	Excellent communication and collaboration abilities.
+•	Ability to work independently and as part of a team in a fast-paced environment.

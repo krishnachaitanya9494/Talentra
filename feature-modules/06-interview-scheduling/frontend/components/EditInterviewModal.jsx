@@ -85,7 +85,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46B8] dark:text-purple-300 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 flex items-center justify-center font-medium">
               <Edit2 className="w-5 h-5" />
             </div>
             <div>
@@ -122,7 +122,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
             <select
               value={roundName}
               onChange={(e) => setRoundName(e.target.value)}
-              className="w-full text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4F46B8] focus:outline-none"
+              className="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-700/30 focus:outline-none"
             >
               {ROUND_OPTIONS.map((r) => (
                 <option key={r} value={r}>
@@ -140,7 +140,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value)}
-              className="w-full text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4F46B8] focus:outline-none"
+              className="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-700/30 focus:outline-none"
             >
               {MODE_OPTIONS.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -160,7 +160,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
               value={locationOrLink}
               onChange={(e) => setLocationOrLink(e.target.value)}
               placeholder="e.g. https://meet.google.com/xyz or Room 402"
-              className="w-full text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4F46B8] focus:outline-none"
+              className="w-full text-sm py-2 px-3 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-700/30 focus:outline-none"
             />
           </div>
 
@@ -174,7 +174,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="Instructions sent to candidate in invite..."
-              className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4F46B8] focus:outline-none"
+              className="w-full text-sm p-2.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-700/30 focus:outline-none"
             />
           </div>
 
@@ -188,7 +188,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
               value={recruiterNotes}
               onChange={(e) => setRecruiterNotes(e.target.value)}
               placeholder="Evaluation focus, compensation notes..."
-              className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#4F46B8] focus:outline-none"
+              className="w-full text-sm p-2.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-white dark:bg-surface-darkHover text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-700/30 focus:outline-none"
             />
           </div>
         </form>
@@ -207,7 +207,7 @@ export const EditInterviewModal = ({ isOpen, onClose, interview, onSuccess }) =>
             type="button"
             onClick={handleSave}
             disabled={submitting}
-            className="px-5 py-2 text-xs font-bold text-white bg-[#4F46B8] hover:bg-[#3730A3] active:bg-indigo-900 rounded-xl shadow-xs transition flex items-center gap-1.5"
+            className="px-5 py-2 text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 active:bg-brand-900 rounded-lg transition-colors flex items-center gap-1.5"
           >
             {submitting ? 'Saving...' : 'Save Changes'}
           </button>

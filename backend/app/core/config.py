@@ -31,11 +31,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'data' / 'talentra_dev.db'}"
     
     # Permitted origins for Cross-Origin Resource Sharing (CORS)
-    # Allows the React Vite frontend (running on port 5173) to communicate with FastAPI
+    # Allows the React Vite / Next.js frontend to communicate with FastAPI
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+
+    # OpenRouter Free AI Configuration
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    OPENROUTER_LLM_MODEL: str = "nvidia/nemotron-3.5-super-vl:free"
+    OPENROUTER_CHAT_MODEL: str = "nvidia/nemotron-3.5-super-vl:free"
+    OPENROUTER_EMBEDDING_MODEL: str = "nvidia/nemotron-3-embed-1b:free"
 
     model_config = SettingsConfigDict(
         # Point to the root .env file if it exists, but don't fail if absent

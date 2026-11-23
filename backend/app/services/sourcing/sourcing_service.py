@@ -88,7 +88,7 @@ class SourcingService:
 
             # If not yet parsed in ParsedJobRequirement, parse raw text
             text_to_parse = jd_doc.raw_text or jd_doc.original_filename
-            parsed = JobDescriptionParser.parse(text_to_parse, filename=jd_doc.original_filename, jd_doc_id=jd_doc.doc_id)
+            parsed = JobDescriptionParser.parse_with_ai(text_to_parse, filename=jd_doc.original_filename, jd_doc_id=jd_doc.doc_id)
             min_exp = float(parsed.get("min_experience_years") or parsed.get("min_experience") or 0.0)
             max_exp = float(parsed.get("max_experience_years") or parsed.get("max_experience") or 15.0)
             quals = parsed.get("required_qualifications") or parsed.get("qualifications") or ""
@@ -117,7 +117,7 @@ class SourcingService:
         if not text or not text.strip():
             raise ValueError("No Job Description text or repository JD was provided.")
 
-        parsed = JobDescriptionParser.parse(text, filename=filename)
+        parsed = JobDescriptionParser.parse_with_ai(text, filename=filename)
         min_exp = float(parsed.get("min_experience_years") or parsed.get("min_experience") or 0.0)
         max_exp = float(parsed.get("max_experience_years") or parsed.get("max_experience") or 15.0)
         quals = parsed.get("required_qualifications") or parsed.get("qualifications") or ""

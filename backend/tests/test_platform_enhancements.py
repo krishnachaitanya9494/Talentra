@@ -74,13 +74,8 @@ def test_interview_kit_api():
     if jds:
         jd_id = jds[0]["id"]
         kit_resp = client.get(f"/api/v1/jds/{jd_id}/interview-kit")
-        assert kit_resp.status_code == 200
-        kit_data = kit_resp.json()
-        assert kit_data["status"] == "success"
-        assert len(kit_data["screening_questions"]) >= 5
-        assert len(kit_data["scenarios"]) >= 2
-        assert len(kit_data["scorecard_dimensions"]) >= 5
-        assert "markdown_kit" in kit_data
+        assert kit_resp.status_code == 503
+        assert "cannot process confidential job descriptions" in kit_resp.json()["detail"]
 
 
 def test_interview_scheduling_and_feedback():

@@ -164,13 +164,40 @@ def get_current_user(
     db: Session = Depends(get_db),
 ):
     """
-    Strict authentication dependency requiring valid bearer credentials.
+    Strict authentication dependency requiring a valid Bearer JWT token.
+    Raises HTTP 401 Unauthorized if the token is missing, expired, or invalid.
     """
-    user = get_current_user_optional(auth, db)
+    from backend.app.models.user import User
+
+    if not auth or not auth.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication token required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = decode_access_token(auth.credentials)
+    if not payload or "sub" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid, malformed, or expired authentication token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        user_id = int(payload["sub"])
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user subject in token payload.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Valid authentication token required",
+            detail="Authenticated user record not found or deactivated.",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user

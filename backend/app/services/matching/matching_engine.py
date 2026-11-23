@@ -110,7 +110,11 @@ class MatchingEngine:
         matched_req_skills = []
         missing_req_skills = []
 
-        if req_skills_list:
+        if req_skills_list and not cand_skills:
+            skills_score = 50.0
+            ev_status = "unknown"
+            ev_text = "Candidate skills are not present in the available profile."
+        elif req_skills_list:
             for req in req_skills_list:
                 if matches_skill(req):
                     matched_req_skills.append(req)
@@ -277,16 +281,16 @@ class MatchingEngine:
             deg_summary = ", ".join(degrees_found) if degrees_found else "Degree Verified"
         else:
             # Check candidate notes or raw representation
-            deg_summary = "Educational qualifications present" if getattr(candidate, "source", None) else "Standard degree inferred"
-            has_degree = True
+            deg_summary = "Educational qualifications present" if getattr(candidate, "source", None) else "Education not listed"
+            has_degree = False
 
         if jd_quals and ("b.tech" in jd_quals or "degree" in jd_quals or "bachelor" in jd_quals):
             qual_score = 95.0 if has_degree else 60.0
-            qual_status = "confirmed_match"
-            qual_text = f"Academic requirement satisfied: {deg_summary}."
+            qual_status = "confirmed_match" if has_degree else "unknown"
+            qual_text = f"Academic requirement {'satisfied' if has_degree else 'not verified'}: {deg_summary}."
         else:
             qual_score = 85.0
-            qual_status = "confirmed_match"
+            qual_status = "unknown" if not has_degree else "confirmed_match"
             qual_text = f"Qualification: {deg_summary}."
 
         evidences.append({

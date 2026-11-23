@@ -40,15 +40,15 @@ try:
     )
 except (ImportError, ValueError):
     try:
-        from backend.app.models.interview_models import (
+        from backend.models.interview_models import (
             InterviewSchedule,
             InterviewPanelMember,
             InterviewAvailability,
             InterviewerWorkingHours,
             InterviewHistory,
         )
-        from backend.app.services.interview.interview_service import InterviewService, SchedulingConflictException
-        from backend.app.schemas.interview_schemas import (
+        from backend.services.interview_service import InterviewService, SchedulingConflictException
+        from contracts.interview_schemas import (
             InterviewCreateRequest,
             InterviewUpdateRequest,
             InterviewRescheduleRequest,
@@ -59,24 +59,44 @@ except (ImportError, ValueError):
             InvitationPreviewResponse,
         )
     except (ImportError, ValueError):
-        from models.interview_models import (
-            InterviewSchedule,
-            InterviewPanelMember,
-            InterviewAvailability,
-            InterviewerWorkingHours,
-            InterviewHistory,
-        )
-        from services.interview_service import InterviewService, SchedulingConflictException
-        from schemas.interview_schemas import (
-            InterviewCreateRequest,
-            InterviewUpdateRequest,
-            InterviewRescheduleRequest,
-            InterviewCancelRequest,
-            InterviewResponse,
-            AvailabilityCheckRequest,
-            AvailabilityCheckResponse,
-            InvitationPreviewResponse,
-        )
+        try:
+            from backend.app.models.interview_models import (
+                InterviewSchedule,
+                InterviewPanelMember,
+                InterviewAvailability,
+                InterviewerWorkingHours,
+                InterviewHistory,
+            )
+            from backend.app.services.interview.interview_service import InterviewService, SchedulingConflictException
+            from backend.app.schemas.interview_schemas import (
+                InterviewCreateRequest,
+                InterviewUpdateRequest,
+                InterviewRescheduleRequest,
+                InterviewCancelRequest,
+                InterviewResponse,
+                AvailabilityCheckRequest,
+                AvailabilityCheckResponse,
+                InvitationPreviewResponse,
+            )
+        except (ImportError, ValueError):
+            from models.interview_models import (
+                InterviewSchedule,
+                InterviewPanelMember,
+                InterviewAvailability,
+                InterviewerWorkingHours,
+                InterviewHistory,
+            )
+            from services.interview_service import InterviewService, SchedulingConflictException
+            from schemas.interview_schemas import (
+                InterviewCreateRequest,
+                InterviewUpdateRequest,
+                InterviewRescheduleRequest,
+                InterviewCancelRequest,
+                InterviewResponse,
+                AvailabilityCheckRequest,
+                AvailabilityCheckResponse,
+                InvitationPreviewResponse,
+            )
 
 # Portable DB Session Dependency
 try:
@@ -184,43 +204,48 @@ def list_candidates(db: Session = Depends(get_db)):
         return [
             {
                 "id": c.id,
+                "first_name": c.first_name,
+                "last_name": c.last_name,
                 "full_name": c.full_name,
                 "email": c.email,
                 "phone": c.phone,
-                "current_designation": getattr(c, "current_designation", ""),
+                "current_title": getattr(c, "current_title", "") or "",
+                "current_designation": getattr(c, "current_title", "") or "",
                 "current_company": getattr(c, "current_company", ""),
-                "experience_years": getattr(c, "experience_years", 0),
+                "experience_years": getattr(c, "total_experience_years", 0),
             }
             for c in cands
         ]
     except Exception:
         # Fallback dummy list for portable standalone mode
         return [
-            {"id": 101, "full_name": "Pooja Singh", "email": "pooja.singh@example.com", "current_designation": "Oracle EPM Consultant"},
-            {"id": 102, "full_name": "Naresh Kumawat", "email": "naresh.k@example.com", "current_designation": "Senior Hyperion Specialist"},
-            {"id": 103, "full_name": "Pallavi V Honagond", "email": "pallavi.h@example.com", "current_designation": "Siemens Teamcenter Engineer"},
+            {"id": 101, "first_name": "Pooja", "last_name": "Singh", "full_name": "Pooja Singh", "email": "pooja.singh@example.com", "current_title": "Oracle EPM Consultant", "current_designation": "Oracle EPM Consultant"},
+            {"id": 102, "first_name": "Naresh", "last_name": "Kumawat", "full_name": "Naresh Kumawat", "email": "naresh.k@example.com", "current_title": "Senior Hyperion Specialist", "current_designation": "Senior Hyperion Specialist"},
+            {"id": 103, "first_name": "Pallavi V", "last_name": "Honagond", "full_name": "Pallavi V Honagond", "email": "pallavi.h@example.com", "current_title": "Siemens Teamcenter Engineer", "current_designation": "Siemens Teamcenter Engineer"},
         ]
 
 
 @router.get("/job-requisitions")
 def list_job_requisitions(db: Session = Depends(get_db)):
     try:
-        from backend.app.models.job_description import JobDescription
-        jds = db.query(JobDescription).order_by(JobDescription.id.desc()).limit(50).all()
+        from backend.app.models.job_requirement import JobRequirement
+        jds = db.query(JobRequirement).order_by(JobRequirement.id.desc()).limit(50).all()
         return [
             {
                 "id": jd.id,
-                "title": jd.title or jd.job_title,
+                "title": jd.title or getattr(jd, "job_title", "") or getattr(jd, "req_code", ""),
+                "req_code": jd.req_code,
                 "department": getattr(jd, "department", "Engineering"),
                 "status": getattr(jd, "status", "active"),
+                "client_name": getattr(jd, "client_name", None) or (jd.client.name if getattr(jd, "client", None) else "Talentra"),
             }
             for jd in jds
         ]
     except Exception:
         return [
-            {"id": 201, "title": "Oracle EPM / Hyperion Planning Consultant"},
-            {"id": 202, "title": "Siemens Teamcenter PLM Consultant / Engineer"},
-            {"id": 203, "title": "Senior Cloud Infrastructure Architect"},
+            {"id": 201, "title": "Oracle EPM / Hyperion Planning Consultant", "client_name": "Talentra"},
+            {"id": 202, "title": "Siemens Teamcenter PLM Consultant / Engineer", "client_name": "Talentra"},
+            {"id": 203, "title": "Senior Cloud Infrastructure Architect", "client_name": "Talentra"},
         ]
 
 

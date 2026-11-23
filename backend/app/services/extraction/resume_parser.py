@@ -688,3 +688,77 @@ class ResumeParser:
                 "supporting_source": f"Documented employer record: {emp}",
             })
         return history
+
+    @classmethod
+    def parse_with_ai(
+        cls,
+        text: str,
+        filename: Optional[str] = None,
+        resume_doc_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        AI-assisted contextual extraction for complex/unstructured resume layouts,
+        strictly adhering to the Free AI Model Policy and Zero-Fabrication Policy.
+        """
+        result = cls.parse(text, filename=filename, resume_doc_id=resume_doc_id)
+        conf = result.get("confidences", {})
+
+        # If deterministic rules extracted both name and experience with high confidence, skip LLM call
+        if conf.get("name", 0) >= 0.8 and conf.get("experience", 0) >= 0.8:
+            return result
+
+        try:
+            from backend.app.services.ai.ai_service import get_ai_service
+            from pydantic import BaseModel, Field
+
+            class AIResumeExtraction(BaseModel):
+                full_name: Optional[str] = None
+                current_designation: Optional[str] = None
+                total_experience_years: Optional[float] = None
+                current_company: Optional[str] = None
+                previous_employers: List[str] = Field(default_factory=list)
+                technical_skills: List[str] = Field(default_factory=list)
+                location: Optional[str] = None
+
+            ai_svc = get_ai_service()
+            prompt = (
+                f"Extract candidate details from the following resume text.\n"
+                f"Filename: {filename or 'resume'}\n"
+                f"STRICT ZERO-FABRICATION RULE: If any field is not explicitly stated in the text, return null or empty list. "
+                f"Never guess names, employers, contact details, or experience.\n\n"
+                f"RESUME TEXT (first 3000 chars):\n{text[:3000]}"
+            )
+            ai_res = ai_svc.generate_structured(prompt, AIResumeExtraction)
+
+            if not result.get("name") and ai_res.full_name:
+                result["name"] = ai_res.full_name
+                result["confidences"]["name"] = 0.85
+                result["evidence"]["name"] = f"AI Contextual Extraction: {ai_res.full_name}"
+
+            if not result.get("current_designation") and ai_res.current_designation:
+                result["current_designation"] = ai_res.current_designation
+                result["confidences"]["current_designation"] = 0.80
+
+            if result.get("total_experience") is None and ai_res.total_experience_years is not None:
+                result["total_experience"] = ai_res.total_experience_years
+                result["confidences"]["experience"] = 0.80
+
+            if not result.get("current_company") and ai_res.current_company:
+                result["current_company"] = ai_res.current_company
+
+            if ai_res.technical_skills:
+                existing = set(result.get("technical_skills", []))
+                for sk in ai_res.technical_skills:
+                    if sk not in existing:
+                        result.setdefault("technical_skills", []).append(sk)
+        except Exception as err:
+            from backend.app.services.ai.ai_service import AIDataPolicyError
+
+            result["ai_status"] = "blocked" if isinstance(err, AIDataPolicyError) else "unavailable"
+            result["ai_message"] = (
+                str(err)
+                if isinstance(err, AIDataPolicyError)
+                else "Nemotron was unavailable; deterministic extraction was retained. Review uncertain fields."
+            )
+
+        return result

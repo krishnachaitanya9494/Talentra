@@ -300,3 +300,69 @@ class JobDescriptionParser:
         mand_str = "\n".join(f"• {b}" for b in mandatory_bullets[:15]) if mandatory_bullets else None
         pref_str = "\n".join(f"• {b}" for b in preferred_bullets[:10]) if preferred_bullets else None
         return mand_str, pref_str
+
+    @classmethod
+    def parse_with_ai(
+        cls,
+        text: str,
+        filename: Optional[str] = None,
+        jd_doc_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        AI-assisted structured extraction for Job Descriptions,
+        strictly adhering to the Free AI Model Policy.
+        """
+        result = cls.parse(text, filename=filename, jd_doc_id=jd_doc_id)
+        conf = result.get("confidences", {})
+
+        if conf.get("job_title", 0) >= 0.9 and conf.get("experience", 0) >= 0.8:
+            return result
+
+        try:
+            from backend.app.services.ai.ai_service import get_ai_service
+            from pydantic import BaseModel, Field
+
+            class AIJDExtraction(BaseModel):
+                job_title: Optional[str] = None
+                experience_min: Optional[float] = None
+                experience_max: Optional[float] = None
+                mandatory_skills: List[str] = Field(default_factory=list)
+                preferred_skills: List[str] = Field(default_factory=list)
+                location: Optional[str] = None
+                employment_type: Optional[str] = None
+
+            ai_svc = get_ai_service()
+            prompt = (
+                f"Extract structured job specifications from this JD.\n"
+                f"Filename: {filename or 'jd'}\n\n"
+                f"JD TEXT (first 3000 chars):\n{text[:3000]}"
+            )
+            ai_res = ai_svc.generate_structured(prompt, AIJDExtraction)
+
+            if not result.get("job_title") and ai_res.job_title:
+                result["job_title"] = ai_res.job_title
+                result["confidences"]["job_title"] = 0.85
+                result["evidence"]["job_title"] = f"AI Contextual Extraction: {ai_res.job_title}"
+
+            if result.get("min_experience") is None and ai_res.experience_min is not None:
+                result["min_experience"] = ai_res.experience_min
+                result["max_experience"] = ai_res.experience_max
+                result["confidences"]["experience"] = 0.80
+
+            if not result.get("required_skills") and ai_res.mandatory_skills:
+                result["required_skills"] = ", ".join(ai_res.mandatory_skills)
+
+            if not result.get("location") and ai_res.location:
+                result["location"] = ai_res.location
+
+        except Exception as err:
+            from backend.app.services.ai.ai_service import AIDataPolicyError
+
+            result["ai_status"] = "blocked" if isinstance(err, AIDataPolicyError) else "unavailable"
+            result["ai_message"] = (
+                str(err)
+                if isinstance(err, AIDataPolicyError)
+                else "Nemotron was unavailable; deterministic JD parsing was retained. Review uncertain fields."
+            )
+
+        return result

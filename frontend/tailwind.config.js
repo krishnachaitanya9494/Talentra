@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 import defaultColors from 'tailwindcss/colors';
 
 // Export Tailwind CSS configuration object.
@@ -11,7 +11,7 @@ export default {
     "./index.html",
     // Include all JavaScript and JSX source files.
     "./src/**/*.{js,ts,jsx,tsx}",
-    "../feature-modules/**/*.{js,ts,jsx,tsx}",
+    "../feature-modules/0[1-6]-*/frontend/**/*.{js,ts,jsx,tsx}",
   ],
   // Extend default Tailwind theme tokens.
   theme: {
@@ -35,47 +35,82 @@ export default {
           600: '#475569', // Subtle text
           500: '#64748B', // Neutral placeholder
         },
-        // Subtle emerald / mint green accent palette for AI highlights and status.
+        // Muted forest green is the single interface accent.
         brand: {
-          50: '#ECFDF5',  // Very light mint green background for badges/panels
-          100: '#D1FAE5', // Soft green accent background
-          200: '#A7F3D0', // Green border accent
-          500: '#10B981', // Core brand green
-          600: '#059669', // Darker brand green for buttons & focus
-          700: '#047857', // High-contrast green text
-          900: '#064E3B', // Deep dark green for dark mode pills
+          50: '#F0F5F0',
+          100: '#DDE9DF',
+          200: '#C3D6C6',
+          300: '#A4BEA9',
+          400: '#73977B',
+          500: '#4E8059',
+          600: '#3B6B47',
+          700: '#2F573A',
+          800: '#264832',
+          900: '#1E3C28',
+          950: '#13271A',
         },
-        // Indigo / Electric Violet secondary palette for AI Intelligence, Analytics & visual depth.
+        indigo: {
+          50: '#F0F5F0',
+          100: '#DDE9DF',
+          200: '#C3D6C6',
+          300: '#A4BEA9',
+          400: '#73977B',
+          500: '#4E8059',
+          600: '#3B6B47',
+          700: '#2F573A',
+          800: '#264832',
+          900: '#1E3C28',
+          950: '#13271A',
+        },
+        purple: {
+          50: '#FAFAFA',
+          100: '#F4F4F5',
+          200: '#E4E4E7',
+          300: '#D4D4D8',
+          400: '#A1A1AA',
+          500: '#71717A',
+          600: '#52525B',
+          700: '#3F3F46',
+          800: '#27272A',
+          900: '#18181B',
+          950: '#09090B',
+        },
+        // Neutral alias for secondary emphasis; status colors remain semantic.
         accent: {
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
-          900: '#312E81',
-          950: '#1E1B4B',
+          50: '#F4F4F5',
+          100: '#E4E4E7',
+          200: '#D4D4D8',
+          400: '#A1A1AA',
+          500: '#71717A',
+          600: '#52525B',
+          700: '#3F3F46',
+          900: '#27272A',
+          950: '#18181B',
         },
         // Clean neutral background canvas supporting both light and dark themes.
         surface: {
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
+          50: '#F6F7F5',
+          100: '#EFF1EE',
+          200: '#E1E5E0',
           card: '#FFFFFF',
-          dark: '#09090B',        // Main dark canvas background
-          darkCanvas: '#09090B',  // True dark canvas (was pure black)
-          darkCard: '#111113',    // Primary dark card background
-          darkCardSecondary: '#18181B', // Secondary dark card background
-          darkHover: '#222225',   // Dark elevated hover state
-          darkBorder: '#27272A',  // Neutral dark border
+          dark: '#121512',
+          darkCanvas: '#121512',
+          darkCard: '#191D19',
+          darkCardSecondary: '#222722',
+          darkHover: '#282E28',
+          darkBorder: '#303630',
         }
       },
-      // Configure crisp enterprise typography hierarchy.
+      // Use one interface family for consistent, quiet typography.
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'Fira Code', 'monospace'],
+      },
+      borderRadius: {
+        xl: '0.625rem',
+        '2xl': '0.875rem',
+        '3xl': '1rem',
       },
       // Centralized application-wide typography scale tokens.
       fontSize: {
@@ -93,14 +128,14 @@ export default {
         'helper-text': ['0.84375rem', { lineHeight: '1.5', fontWeight: '400' }], // 13.5px (13-14px range)
         'badge-text': ['0.8125rem', { lineHeight: '1.3', fontWeight: '500' }], // 13px (13-14px range)
       },
-      // Multi-layered enterprise shadows and subtle emerald AI glow tokens.
+      // Neutral elevation only; avoid colored glow effects.
       boxShadow: {
-        'subtle': '0 1px 2px 0 rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03)',
-        'card': '0 2px 6px -1px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04)',
-        'card-hover': '0 12px 24px -6px rgba(15, 23, 42, 0.12), 0 4px 10px -4px rgba(16, 185, 129, 0.10)',
-        'dropdown': '0 14px 28px -6px rgba(15, 23, 42, 0.14), 0 4px 10px -4px rgba(15, 23, 42, 0.06)',
-        'glow-brand': '0 6px 20px -4px rgba(16, 185, 129, 0.28), 0 2px 6px -1px rgba(16, 185, 129, 0.16)',
-        'glow-accent': '0 6px 20px -4px rgba(99, 102, 241, 0.28), 0 2px 6px -1px rgba(99, 102, 241, 0.16)',
+        'subtle': '0 1px 2px rgba(24, 32, 25, 0.05)',
+        'card': '0 1px 3px rgba(24, 32, 25, 0.06)',
+        'card-hover': '0 4px 10px rgba(24, 32, 25, 0.08)',
+        'dropdown': '0 8px 20px rgba(24, 32, 25, 0.12)',
+        'glow-brand': '0 1px 3px rgba(24, 32, 25, 0.08)',
+        'glow-accent': '0 1px 3px rgba(24, 32, 25, 0.08)',
       }
     },
   },

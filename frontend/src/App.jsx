@@ -1,18 +1,21 @@
+'use client';
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import AppLayout from './components/layout/AppLayout';
-import DashboardPage from './pages/DashboardPage';
-import HomePage from './pages/HomePage';
-import MatchingPage from './pages/MatchingPage';
-import AssignmentsPage from './pages/AssignmentsPage';
-import CampaignsPage from './pages/CampaignsPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import SourcingPage from './pages/SourcingPage';
-import ProfileScraperPage from './pages/ProfileScraperPage';
-import ClientsPage from './pages/ClientsPage';
-import JDResumeComparisonPage from './pages/JDResumeComparisonPage';
-import InterviewTimetablePage from './pages/InterviewTimetablePage';
+import DashboardPage from './views/DashboardPage';
+import HomePage from './views/HomePage';
+import MatchingPage from './views/MatchingPage';
+import AssignmentsPage from './views/AssignmentsPage';
+import CampaignsPage from './views/CampaignsPage';
+import AnalyticsPage from './views/AnalyticsPage';
+import SourcingPage from './views/SourcingPage';
+import ProfileScraperPage from './views/ProfileScraperPage';
+import ClientsPage from './views/ClientsPage';
+import JDResumeComparisonPage from './views/JDResumeComparisonPage';
+import InterviewTimetablePage from './views/InterviewTimetablePage';
+import RecruiterAgentPage from './views/RecruiterAgentPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 /**
@@ -37,12 +40,13 @@ export default function App() {
               <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/sourcing" element={<SourcingPage />} />
+              <Route path="/agent" element={<RecruiterAgentPage />} />
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/interview-timetable" element={<InterviewTimetablePage />} />
               <Route
                 path="/profile-scraper"
                 element={
-                  <ErrorBoundary title="Candidate Web Scraper Error">
+                  <ErrorBoundary title="Resume Importer Error">
                     <ProfileScraperPage />
                   </ErrorBoundary>
                 }

@@ -25,6 +25,8 @@ build/
 # Frontend build output
 frontend/dist/
 frontend/dist-ssr/
+.next/
+frontend/.next/
 
 # SQLite databases (keep .gitkeep in data/)
 data/*.db
@@ -38,6 +40,7 @@ data/*.sqlite3
 # IDE and OS files
 .vscode/
 .idea/
+.hallmark/
 .DS_Store
 Thumbs.db
 

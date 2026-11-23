@@ -119,6 +119,21 @@ def test_critical_mandatory_mismatch_protection():
     assert len(res["missing_skills"]) == 4
 
 
+def test_absent_candidate_skills_are_unknown_not_confirmed_mismatch():
+    cand = Candidate(candidate_code="CAN-EMPTY-001", first_name="A", last_name="B", email="a@example.com")
+    result = MatchingEngine.evaluate_candidate(cand, {"required_skills_list": ["Python"]})
+    evidence = next(item for item in result["evidences"] if item["dimension"] == "Required Skills")
+    assert evidence["status"] == "unknown"
+    assert result["has_critical_mismatch"] is False
+
+
+def test_absent_education_is_unknown_when_jd_requires_degree():
+    cand = Candidate(candidate_code="CAN-EDU-001", first_name="A", last_name="B", email="edu@example.com")
+    result = MatchingEngine.evaluate_candidate(cand, {"required_qualifications": "Bachelor degree"})
+    evidence = next(item for item in result["evidences"] if item["dimension"] == "Qualifications")
+    assert evidence["status"] == "unknown"
+
+
 def test_sap_security_jd_extraction_ignores_go_live_and_finds_domain_skills():
     jd_text = """
     SAP SECURITY & GRC CONSULTANT - S/4HANA / FIORI

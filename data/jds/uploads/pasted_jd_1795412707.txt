@@ -1,0 +1,1 @@
+We are hiring a Senior Python & Next.js Backend Engineer in Bangalore. Requirements: 5+ years experience with FastAPI, PostgreSQL, and distributed system design. Nice to have: Docker and Kafka.

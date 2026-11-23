@@ -1,0 +1,88 @@
+[
+  {
+    "id": "sq-14-1",
+    "category": "Technical Assessment",
+    "recommended_stage": "Technical Screening",
+    "difficulty": "Senior",
+    "question": "Can you explain your hands-on experience with Engineering in production environments, specifically addressing architecture, performance limits, and test coverage?",
+    "model_answer": "Candidate should articulate production architectures using Engineering, explain telemetry/observability patterns, and describe specific trade-offs made during scaling or integration.",
+    "expected_signals": [
+      "Concrete production examples with Engineering",
+      "Understanding of performance bottlenecks and concurrency limits",
+      "Familiarity with automated testing and continuous integration"
+    ],
+    "rubric": {
+      "pass": "Demonstrates solid production implementation of Engineering with architectural rationale.",
+      "fail": "Only theoretical understanding or inability to explain practical design choices."
+    },
+    "red_flags": [
+      "Vague answers without concrete production metrics",
+      "Blaming external teams for architecture flaws"
+    ],
+    "review_status": "approved"
+  },
+  {
+    "id": "sq-14-2",
+    "category": "System Problem-Solving & Diagnostics",
+    "recommended_stage": "First Round Interview",
+    "difficulty": "Intermediate",
+    "question": "Describe a complex defect, regression, or integration failure you diagnosed involving Problem Solving. How did you isolate root cause and prevent recurrence?",
+    "model_answer": "Candidate should walk through methodical root-cause analysis (logs, traces, debuggers, isolation benches) with Problem Solving, explain regression test automation, and detail team communication.",
+    "expected_signals": [
+      "Structured root-cause isolation methodology",
+      "Automated regression test creation to prevent re-emergence",
+      "Post-mortem documentation and stakeholder updates"
+    ],
+    "rubric": {
+      "pass": "Uses methodical debugging approach and establishes permanent preventive automated tests.",
+      "fail": "Trial-and-error debugging without telemetry or regression prevention."
+    },
+    "red_flags": [
+      "Inability to explain how the defect was reproduced or tested"
+    ],
+    "review_status": "approved"
+  },
+  {
+    "id": "sq-14-3",
+    "category": "Behavioral & Delivery (STAR)",
+    "recommended_stage": "Hiring Manager Interview",
+    "difficulty": "General",
+    "question": "Tell me about a situation where tight project deadlines conflicted with code quality or test rigor for a Salesforce Lead Developer deliverable. How did you handle trade-offs?",
+    "model_answer": "Candidate demonstrates professional judgment balancing business delivery urgency with technical debt risk, proactive escalation, and phased risk mitigation.",
+    "expected_signals": [
+      "Explicit risk assessment and transparency with engineering leaders",
+      "Prioritizing critical paths while isolating non-blocking technical debt",
+      "Planning subsequent refactoring or automated test coverage sprints"
+    ],
+    "rubric": {
+      "pass": "Balanced engineering pragmatism with quality governance and proactive communication.",
+      "fail": "Silently cut corners or dogmatically blocked delivery without proposing alternatives."
+    },
+    "red_flags": [
+      "Hiding quality compromises from stakeholders",
+      "Uncompromising resistance to business realities"
+    ],
+    "review_status": "approved"
+  },
+  {
+    "id": "sq-14-4",
+    "category": "Enterprise Standards & Compliance",
+    "recommended_stage": "Final Round",
+    "difficulty": "Senior",
+    "question": "How do you ensure security compliance, code review rigor, and deployment reliability when shipping mission-critical features for Talent Operations?",
+    "model_answer": "Candidate details automated linting, static analysis, peer review rubrics, secrets management, and automated release gates.",
+    "expected_signals": [
+      "Familiarity with shift-left security and automated CI pipelines",
+      "Constructive peer review practices and mentoring junior developers",
+      "Adherence to enterprise change management and audit trails"
+    ],
+    "rubric": {
+      "pass": "Articulates comprehensive quality gates and active collaboration with security/compliance teams.",
+      "fail": "Views security and compliance as an afterthought or pure bureaucracy."
+    },
+    "red_flags": [
+      "Bypassing CI gates or ignoring security review recommendations"
+    ],
+    "review_status": "approved"
+  }
+]

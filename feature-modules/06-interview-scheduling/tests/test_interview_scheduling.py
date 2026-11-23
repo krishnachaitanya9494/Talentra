@@ -8,8 +8,10 @@ double-booking prevention, audit trails, and .ics generation in isolation.
 import sys
 from pathlib import Path
 _MOD_ROOT = str(Path(__file__).resolve().parent.parent)
-if _MOD_ROOT not in sys.path:
-    sys.path.append(_MOD_ROOT)
+_REPO_ROOT = str(Path(__file__).resolve().parents[2])
+for p in (_REPO_ROOT, _MOD_ROOT):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 import pytest
 from datetime import date

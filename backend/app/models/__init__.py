@@ -55,6 +55,12 @@ from backend.app.models.scraper import (
     ProfileScrapeRun,
     ScrapedCandidateItem,
 )
+from backend.app.models.agent import (
+    ApprovalRequest,
+    AgentTrace,
+    ResumeEmbedding,
+    JobEmbedding,
+)
 
 __all__ = [
     "Base",
@@ -96,4 +102,8 @@ __all__ = [
     "CandidateExport",
     "ProfileScrapeRun",
     "ScrapedCandidateItem",
+    "ApprovalRequest",
+    "AgentTrace",
+    "ResumeEmbedding",
+    "JobEmbedding",
 ]

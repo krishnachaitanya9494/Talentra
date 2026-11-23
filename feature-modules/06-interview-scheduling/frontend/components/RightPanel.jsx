@@ -124,7 +124,7 @@ export const RightPanel = ({
       {/* Top Header */}
       <div className="px-5 py-3.5 border-b border-[#D9DEE8] dark:border-slate-800 bg-white dark:bg-slate-800/80 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-[#4F46B8]" />
+          <CalendarDays className="w-4 h-4 text-brand-700 dark:text-brand-300" />
           <h3 className="text-xs font-black text-[#172033] dark:text-white uppercase tracking-wider">
             {selectedInterview ? 'Interview Details' : `Day's Agenda`}
           </h3>
@@ -137,7 +137,7 @@ export const RightPanel = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={onOpenAdd}
-            className="p-1.5 rounded-xl bg-[#4F46B8] hover:bg-[#3730A3] active:bg-indigo-900 text-white transition text-xs font-bold flex items-center gap-1 px-3 shadow-xs"
+            className="p-1.5 rounded-lg bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white transition-colors text-sm font-medium flex items-center gap-1 px-3"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add</span>
@@ -194,11 +194,11 @@ export const RightPanel = ({
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-2 p-2 rounded-xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#D9DEE8]/70 dark:border-slate-700">
-                  <Calendar className="w-4 h-4 text-[#4F46B8] shrink-0" />
+                  <Calendar className="w-4 h-4 text-brand-700 dark:text-brand-300 shrink-0" />
                   <span className="font-bold text-[#172033] dark:text-slate-200">{selectedInterview.interview_date}</span>
                 </div>
                 <div className="flex items-center gap-2 p-2 rounded-xl bg-[#F8FAFC] dark:bg-slate-900 border border-[#D9DEE8]/70 dark:border-slate-700">
-                  <Clock className="w-4 h-4 text-[#4F46B8] shrink-0" />
+                  <Clock className="w-4 h-4 text-brand-700 dark:text-brand-300 shrink-0" />
                   <span className="font-mono font-bold text-[#172033] dark:text-slate-200">
                     {selectedInterview.start_time} - {selectedInterview.end_time}
                   </span>
@@ -214,13 +214,13 @@ export const RightPanel = ({
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-[#D9DEE8] dark:border-slate-700 space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between text-[10px] font-extrabold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">
                 <div className="flex items-center gap-1.5">
-                  <Video className="w-3.5 h-3.5 text-[#4F46B8]" />
+                  <Video className="w-3.5 h-3.5 text-brand-700 dark:text-brand-300" />
                   <span>Virtual Meeting Room</span>
                 </div>
                 {selectedInterview.location_or_link && (
                   <button
                     onClick={() => handleCopyLink(selectedInterview.location_or_link)}
-                    className="text-[10px] font-bold text-[#4F46B8] hover:underline flex items-center gap-1"
+                    className="text-sm font-medium text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1"
                   >
                     {copiedLink ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
@@ -240,7 +240,7 @@ export const RightPanel = ({
                       href={selectedInterview.location_or_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3 py-1.5 text-xs font-bold bg-[#4F46B8] hover:bg-[#3730A3] active:bg-indigo-900 text-white rounded-xl flex items-center gap-1 shrink-0 shadow-2xs"
+                      className="px-3 py-1.5 text-sm font-medium bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white rounded-lg flex items-center gap-1 shrink-0"
                     >
                       <span>Join</span>
                       <ExternalLink className="w-3 h-3" />
@@ -255,7 +255,7 @@ export const RightPanel = ({
             {/* SECTION 4: Assigned Interview Panel */}
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800 border border-[#D9DEE8] dark:border-slate-700 space-y-2.5 shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[#4F46B8]" />
+                <Users className="w-3.5 h-3.5 text-brand-700 dark:text-brand-300" />
                 Assigned Interview Panel ({selectedInterview.panel?.length || 0})
               </div>
               <div className="space-y-1.5">
@@ -320,10 +320,10 @@ export const RightPanel = ({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => onOpenEdit && onOpenEdit(selectedInterview)}
-                  className="px-2 py-2 text-xs font-bold text-[#4F46B8] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 rounded-xl border border-purple-200 dark:border-purple-800 flex items-center justify-center gap-1 transition shadow-2xs"
+                  className="px-2 py-2 text-sm font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100 dark:hover:bg-brand-900/60 rounded-lg border border-brand-200 dark:border-brand-800 flex items-center justify-center gap-1 transition-colors"
                   title="Edit details"
                 >
-                  <Edit2 className="w-3.5 h-3.5 text-[#4F46B8] dark:text-purple-400" />
+                  <Edit2 className="w-3.5 h-3.5 text-brand-700 dark:text-brand-300" />
                   <span>Edit</span>
                 </button>
                 <button
@@ -400,7 +400,7 @@ export const RightPanel = ({
 
             {dayInterviews.length === 0 ? (
               <div className="py-14 text-center space-y-3 bg-white dark:bg-slate-800 border border-[#D9DEE8] dark:border-slate-700 rounded-2xl p-6 shadow-xs">
-                <div className="w-12 h-12 rounded-2xl bg-[#EEF1F6] dark:bg-slate-700 text-[#4F46B8] mx-auto flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-surface-darkHover text-brand-700 dark:text-brand-300 mx-auto flex items-center justify-center">
                   <Calendar className="w-6 h-6" />
                 </div>
                 <div className="text-xs font-medium text-[#64748B] dark:text-slate-400">
@@ -408,7 +408,7 @@ export const RightPanel = ({
                 </div>
                 <button
                   onClick={onOpenAdd}
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#4F46B8] hover:bg-[#3730A3] rounded-xl transition shadow-xs"
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 rounded-lg transition-colors"
                 >
                   Schedule New Interview
                 </button>

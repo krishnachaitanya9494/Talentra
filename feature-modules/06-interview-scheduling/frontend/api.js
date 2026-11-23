@@ -5,10 +5,13 @@
  */
 
 const getBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.__INTERVIEW_API_BASE__) {
+  if (typeof window !== 'undefined' && window.__INTERVIEW_API_BASE__ !== undefined) {
     return window.__INTERVIEW_API_BASE__;
   }
-  return import.meta.env?.VITE_API_URL || 'http://127.0.0.1:8001';
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_BASE_URL !== undefined) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  return '';
 };
 
 const handleResponse = async (response) => {
@@ -24,6 +27,29 @@ const handleResponse = async (response) => {
   }
   return response.json();
 };
+
+const FALLBACK_INTERVIEWERS = [
+  { id: 1, full_name: 'Recruiter 1', email: 'recruiter1@talentra.ai', role: 'Administrator', specialization: 'Full Stack, Cloud', scheduled_count: 0, is_available: true },
+  { id: 2, full_name: 'Recruiter 2', email: 'recruiter2@talentra.ai', role: 'Senior TA Lead', specialization: 'Kubernetes, AWS, Docker, Python', scheduled_count: 0, is_available: true },
+  { id: 3, full_name: 'Recruiter 3', email: 'recruiter3@talentra.ai', role: 'Principal TA Recruiter', specialization: 'SAP, Oracle, Hyperion, Data Engineering', scheduled_count: 0, is_available: true },
+  { id: 4, full_name: 'Recruiter 4', email: 'recruiter4@talentra.ai', role: 'Engineering Manager', specialization: 'React, TypeScript, Java, Spring Boot', scheduled_count: 0, is_available: true },
+  { id: 5, full_name: 'Recruiter 5', email: 'recruiter5@talentra.ai', role: 'Recruitment Manager', specialization: 'Engineering Staffing & Requisitions', scheduled_count: 0, is_available: true },
+];
+
+const FALLBACK_CANDIDATES = [
+  { id: 1, first_name: 'Pooja', last_name: 'Singh', full_name: 'Pooja Singh', email: 'poojakirti1695@gmail.com', current_title: 'Oracle EPM Consultant' },
+  { id: 2, first_name: 'Naresh', last_name: 'Kumawat', full_name: 'Naresh Kumawat', email: 'kumawatnaresh740@gmail.com', current_title: 'Senior Hyperion Specialist' },
+  { id: 3, first_name: 'Pallavi V', last_name: 'Honagond', full_name: 'Pallavi V Honagond', email: 'pallavipattan8@gmail.com', current_title: 'Siemens Teamcenter Engineer' },
+  { id: 4, first_name: 'Karthik', last_name: 'Raman', full_name: 'Karthik Raman', email: 'karthik.raman@example.com', current_title: 'Site Reliability Engineer' },
+];
+
+const FALLBACK_JDS = [
+  { id: 1, title: 'Oracle EPM / Hyperion Planning Consultant', req_code: 'JD-001', client_name: 'Talentra Enterprise' },
+  { id: 2, title: 'Siemens Teamcenter PLM Consultant / Engineer', req_code: 'JD-002', client_name: 'Talentra Enterprise' },
+  { id: 3, title: 'PMO / Project Financial Management Consultant – SAP PS', req_code: 'JD-003', client_name: 'Talentra Enterprise' },
+  { id: 8, title: 'Lead Cloud Architect (Enterprise)', req_code: 'REQ-UP-0008', client_name: 'Talentra Enterprise' },
+  { id: 12, title: 'Embedded Systems Engineer', req_code: 'REQ-UP-0012', client_name: 'Talentra Enterprise' },
+];
 
 export const interviewApi = {
   /**
@@ -56,9 +82,14 @@ export const interviewApi = {
    * Fetches available interviewers and workload metrics.
    */
   async getInterviewers() {
-    const url = `${getBaseUrl()}/api/v1/interviews/interviewers`;
-    const res = await fetch(url);
-    return handleResponse(res);
+    try {
+      const url = `${getBaseUrl()}/api/v1/interviews/interviewers`;
+      const res = await fetch(url);
+      const data = await handleResponse(res);
+      return Array.isArray(data) && data.length > 0 ? data : FALLBACK_INTERVIEWERS;
+    } catch {
+      return FALLBACK_INTERVIEWERS;
+    }
   },
 
   /**
@@ -165,19 +196,21 @@ export const interviewApi = {
    */
   async getCandidates(search = '') {
     try {
-      const url = `${getBaseUrl()}/api/v1/documents/candidates?page_size=50${search ? '&query=' + encodeURIComponent(search) : ''}`;
+      const url = `${getBaseUrl()}/api/v1/interviews/candidates${search ? '?search=' + encodeURIComponent(search) : ''}`;
       const res = await fetch(url);
       const data = await handleResponse(res);
-      return data.items || data.candidates || [];
+      const list = Array.isArray(data) ? data : (data.items || data.candidates || []);
+      return list.length > 0 ? list : FALLBACK_CANDIDATES;
     } catch {
-      // Fallback to sourcing candidates endpoint
+      // Fallback to resumes endpoint
       try {
-        const url2 = `${getBaseUrl()}/api/v1/repository/candidates?page_size=50`;
+        const url2 = `${getBaseUrl()}/api/v1/resumes?page_size=100${search ? '&search=' + encodeURIComponent(search) : ''}`;
         const res2 = await fetch(url2);
         const data2 = await handleResponse(res2);
-        return data2.candidates || [];
+        const list2 = data2.items || data2.candidates || [];
+        return list2.length > 0 ? list2 : FALLBACK_CANDIDATES;
       } catch {
-        return [];
+        return FALLBACK_CANDIDATES;
       }
     }
   },
@@ -187,12 +220,22 @@ export const interviewApi = {
    */
   async getJobRequisitions() {
     try {
-      const url = `${getBaseUrl()}/api/v1/documents/jds?page_size=50`;
+      const url = `${getBaseUrl()}/api/v1/interviews/job-requisitions`;
       const res = await fetch(url);
       const data = await handleResponse(res);
-      return data.items || data.jds || [];
+      const list = Array.isArray(data) ? data : (data.items || data.jds || []);
+      return list.length > 0 ? list : FALLBACK_JDS;
     } catch {
-      return [];
+      // Fallback to jds endpoint
+      try {
+        const url2 = `${getBaseUrl()}/api/v1/jds?page_size=100`;
+        const res2 = await fetch(url2);
+        const data2 = await handleResponse(res2);
+        const list2 = data2.items || data2.jds || [];
+        return list2.length > 0 ? list2 : FALLBACK_JDS;
+      } catch {
+        return FALLBACK_JDS;
+      }
     }
   },
 };

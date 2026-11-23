@@ -16,12 +16,12 @@ if (-not (Test-Path $VenvPython)) {
     & $VenvPython -m pip install -r "backend\requirements.txt"
 }
 
-# Determine target port (default 8000, fallback to 8001 if 8000 is occupied)
-$Port = 8000
-$PortCheck = netstat -ano | findstr ":8000 " | findstr "LISTENING"
+# Determine target port (matches .env BACKEND_PORT=8001 and vite.config.js proxy target)
+$Port = 8001
+$PortCheck = netstat -ano | findstr ":8001 " | findstr "LISTENING"
 if ($PortCheck) {
-    Write-Host "Port 8000 is currently occupied. Falling back to port 8001..." -ForegroundColor Yellow
-    $Port = 8001
+    Write-Host "Port 8001 is currently occupied. Falling back to port 8000..." -ForegroundColor Yellow
+    $Port = 8000
 }
 
 Write-Host "Backend server launching at http://127.0.0.1:$Port" -ForegroundColor Green

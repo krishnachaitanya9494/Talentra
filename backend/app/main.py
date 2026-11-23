@@ -25,6 +25,7 @@ from backend.app.routers.interview_timetable import router as interview_timetabl
 from backend.app.routers.interviews import router as interviews_router
 from backend.app.routers.clients import router as clients_router
 from backend.app.routers.comparison import router as comparison_router
+from backend.app.routers.agent import router as agent_router
 from backend.app.schemas.health import RootResponse
 
 
@@ -88,6 +89,8 @@ app.include_router(interviews_router)
 app.include_router(clients_router)
 # Mount the JD & Resume Intelligence Comparison router
 app.include_router(comparison_router)
+# Mount the CompanyAI Enterprise Recruitment Agent router
+app.include_router(agent_router)
 
 
 @app.get(

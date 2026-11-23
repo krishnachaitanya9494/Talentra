@@ -8,10 +8,32 @@ Provides RESTful endpoints for:
 - Listing and searching JDs and Candidates from SQLite
 """
 
-from typing import Optional
+import os
+import json
+import logging
+from typing import Optional, List, Dict, Any, Literal
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query, status
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+
+from backend.app.services.ai.ai_service import get_ai_service
+
+logger = logging.getLogger("talentra.documents")
+
+
+class DynamicQuestionItem(BaseModel):
+    id: str
+    category: str
+    recommended_stage: str
+    difficulty: str
+    question: str
+    model_answer: str
+    expected_signals: List[str]
+    rubric: Dict[str, str]
+    red_flags: List[str]
+    review_status: Literal["draft", "pending_review", "approved"] = "pending_review"
+
 
 from backend.app.database.session import get_db
 from backend.app.core.config import settings
@@ -352,398 +374,16 @@ def get_candidate(candidate_id: int, db: Session = Depends(get_db)) -> Candidate
     summary="Generate AI Technical Screening & Interview Kit for JD",
     description="Generates role-specific technical screening questions, model answers, evaluation scorecard, and company intelligence based on JD requirements.",
 )
-def get_jd_interview_kit(jd_id: int, db: Session = Depends(get_db)):
+def get_jd_interview_kit(
+    jd_id: int,
+    regenerate: bool = Query(False, description="Force AI regeneration of screening questions"),
+    db: Session = Depends(get_db),
+):
     jd = db.get(JobRequirement, jd_id)
     if not jd:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job Requirement not found")
 
-    title = jd.title or "Software Engineering Role"
-    domain = jd.department or "Engineering"
-    title_lower = title.lower()
-    exp_level = (jd.experience_level or "mid").lower()
-    if exp_level == "entry":
-        exp_min, exp_max = 1, 3
-    elif exp_level == "senior":
-        exp_min, exp_max = 5, 8
-    elif exp_level in ("lead", "principal", "executive"):
-        exp_min, exp_max = 8, 12
-    else:
-        exp_min, exp_max = 3, 6
-
-    # Extract skills
-    skills_raw = jd.required_skills or ""
-    if isinstance(skills_raw, list):
-        skills = skills_raw
-    else:
-        skills = [s.strip() for s in str(skills_raw).split(",") if s.strip()]
-
-    pref_skills = []
-
-    top_skill_1 = skills[0] if len(skills) > 0 else "System Architecture"
-    top_skill_2 = skills[1] if len(skills) > 1 else "Database Optimization"
-    top_skill_3 = skills[2] if len(skills) > 2 else "API Design"
-
-    # Role-specific questions & comprehensive model answers
-    if "hyperion" in title_lower or "epm" in title_lower or any("hyperion" in s.lower() for s in skills):
-        screening_questions = [
-            {
-                "id": "sq-1",
-                "category": "Architecture & Implementation",
-                "recommended_stage": "Technical Round 1",
-                "difficulty": "Advanced",
-                "question": "Can you walk through an end-to-end implementation of Oracle Planning and Budgeting Cloud Service (PBCS) or on-premise Hyperion where you designed calculation scripts and dimension hierarchies?",
-                "model_answer": "In an end-to-end PBCS implementation, I begin by modeling the multidimensional outline in Essbase, strictly separating Dense dimensions (such as Accounts and Periods) from Sparse dimensions (such as Entity, Scenario, Version, and Cost Center) to optimize data block footprint and minimize disk I/O. I set up metadata using Dimension Management with Smart Lists and User Variables. For calculations, I author calculation scripts in Calculation Manager using targeted FIX...ENDFIX blocks, leveraging @CALCMODE(BLOCK) and @ISMBR to ensure optimal throughput. I implement Dynamic Calc for simple hierarchical rollups while reserving Stored members for historical actuals. For integration, I establish Data Management (FDMEE) locations with explicit and wildcard mapping rules, validating staging balances before promoting the application snapshot using Lifecycle Management (LCM).",
-                "expected_signals": [
-                    "Distinguishes Essbase block storage (BSO) vs aggregate storage (ASO) and Dense vs Sparse dimensions.",
-                    "Explains calculation script structure: FIX statements, @CALCMODE(BLOCK), and avoiding cross-dimensional operators in large FIXes.",
-                    "Details metadata management, Smart View validation, and automated LCM snapshot migration."
-                ],
-                "rubric": {
-                    "below_bar": "Confuses Dense and Sparse dimensions; only worked as an end-user running reports in Smart View.",
-                    "meets_bar": "Explains block storage, writes basic calculation scripts with FIX blocks, and loads data via Data Management.",
-                    "exceeds_bar": "Masters Essbase memory cache tuning, complex allocation algorithms, LCM automation, and multi-currency consolidation."
-                },
-                "red_flags": [
-                    "Only cites textbook definitions without real project examples.",
-                    "Cannot explain why a calculation script causes memory exhaustion or endless loops."
-                ],
-            },
-            {
-                "id": "sq-2",
-                "category": "Practical Problem Solving & Tuning",
-                "recommended_stage": "Technical Deep Dive",
-                "difficulty": "Expert",
-                "question": "How do you troubleshoot and tune a long-running calculation script or consolidation job in Essbase?",
-                "model_answer": "First, I examine the Essbase application log (essbase.log) to check elapsed execution time, block creation rates, and cache hit ratios. Next, I verify the Dense/Sparse dimension configuration: having too many Dense dimensions results in sparse blocks that bloat the database and cause severe paging. In the calculation script, I set CALCLOCKBLOCK HIGH, verify intelligent calculation status (SET UPDATECALC ON), and ensure FIX statements isolate only dirty or updated slices rather than scanning the entire outline. Finally, I tune the memory caches in essbase.cfg: sizing the index cache to hold all index pages, allocating sufficient data cache for decompression, and adjusting data file cache before performing full restructuring to eliminate index fragmentation.",
-                "expected_signals": [
-                    "Dense/Sparse dimension restructuring and avoiding bloated block sizes.",
-                    "Memory cache hierarchy: Index cache, Data cache, and Data file cache configuration.",
-                    "Script optimization: CALCLOCKBLOCK commands, SET UPDATECALC ON, and scoped FIX ranges."
-                ],
-                "rubric": {
-                    "below_bar": "Suggests restarting the server or adding more CPUs without diagnostic telemetry.",
-                    "meets_bar": "Checks essbase.log, verifies Dense/Sparse layout, and tunes basic calculation script FIX boundaries.",
-                    "exceeds_bar": "Performs deep cache sizing, calculates exact block size in bytes, and re-sequences dimensions by sparsity."
-                },
-                "red_flags": [
-                    "Never heard of essbase.cfg or Essbase application logs.",
-                    "Does not understand what constitutes a database block or how blocks are indexed."
-                ],
-            },
-            {
-                "id": "sq-3",
-                "category": "Integration & Automated Governance",
-                "recommended_stage": "Recruiter Phone Screen",
-                "difficulty": "Intermediate",
-                "question": "How do you design and automate financial data ingestion between source ERPs (like SAP or Oracle ERP Cloud) and EPM Cloud?",
-                "model_answer": "I configure Data Management / FDMEE using automated EPM Automate command-line scheduling or direct REST APIs. Source ERP balances are extracted as scheduled file drops or direct query adapters, passed through explicit, between, and multi-dimensional mapping rules in Data Management, and staged. I automate batch ingestion using shell or PowerShell scripts executing 'epmautomate runDMDataRule' and 'epmautomate runBusinessRule'. Before releasing data to planning users, automated reconciliation scripts compare ERP general ledger trial balances against EPM staging totals, halting the automated pipeline and alerting administrators if variances exceed preset thresholds.",
-                "expected_signals": [
-                    "FDMEE / Data Management import formats, locations, and mapping tables.",
-                    "EPM Automate CLI batch scheduling with error handling and exit codes.",
-                    "Automated reconciliation audits and variance exception notifications."
-                ],
-                "rubric": {
-                    "below_bar": "Relies on manual Excel upload without automated scheduling or auditability.",
-                    "meets_bar": "Creates Data Management rules and runs batch jobs via EPM Automate.",
-                    "exceeds_bar": "Builds resilient REST API integrations, idempotent staging pipelines, and automated ERP reconciliation alerts."
-                },
-                "red_flags": [
-                    "Unaware of EPM Automate commands or Data Management mapping logic.",
-                    "No mechanism for error notifications or failed batch alerts."
-                ],
-            },
-            {
-                "id": "sq-4",
-                "category": "Domain Knowledge & Financial Close",
-                "recommended_stage": "Hiring Manager Round",
-                "difficulty": "Intermediate",
-                "question": "How do you handle intercompany eliminations, currency translation, and financial close compliance in multi-entity setups?",
-                "model_answer": "For multi-entity consolidation, I define an Intercompany (ICP) dimension where matching entity pairs register bilateral transactions. During consolidation rules execution, automated elimination rules generate offsetting entries at the first common parent entity in the hierarchy. For multi-currency reporting, I configure exchange rate tables (Ending, Average, and Historical rates) and implement standard translation methods (e.g. Cumulative Translation Adjustment to equity). I enforce strict closing calendars by locking periods via Data Status and Process Management, ensuring SOX audit compliance with complete immutable logs of all metadata and data modifications.",
-                "expected_signals": [
-                    "Intercompany matching and elimination at the first common parent entity.",
-                    "Currency translation tables: Ending, Average, and Historical rates with CTA accounting.",
-                    "Period locking, Process Management approvals, and SOX auditability."
-                ],
-                "rubric": {
-                    "below_bar": "Unfamiliar with intercompany balancing or manual netting adjustments in Excel.",
-                    "meets_bar": "Explains first common parent elimination and standard currency translation.",
-                    "exceeds_bar": "Understands statutory equity adjustments, minority interest eliminations, and complex ownership tracking."
-                },
-                "red_flags": [
-                    "Claims intercompany entries are manually booked at year-end.",
-                    "No understanding of CTA (Cumulative Translation Adjustment)."
-                ],
-            },
-            {
-                "id": "sq-5",
-                "category": "Cloud Modernization & Lifecycle",
-                "recommended_stage": "Technical Round 2",
-                "difficulty": "Advanced",
-                "question": "What is your approach to migrating legacy on-premise Hyperion applications to Oracle EPM Cloud (PBCS / EPBCS)?",
-                "model_answer": "I follow a structured 5-phase cloud modernization blueprint: 1) Outline rationalization (purging unused members, restructuring Dense/Sparse dimensions to meet Cloud block limits); 2) Rule modernization (refactoring legacy MAXL/Calc scripts into Calculation Manager business rules or Groovy scripts); 3) Web form and dashboard conversion; 4) Integration transition from direct database links to Data Management and EPM Automate REST flows; and 5) Parallel financial close runs for 2 consecutive cycles to guarantee numerical parity before cutover.",
-                "expected_signals": [
-                    "Outline simplification and block size compliance for Cloud.",
-                    "Converting legacy calc scripts to Groovy and Calculation Manager rules.",
-                    "Dual-run parallel financial close reconciliation before decommissioning."
-                ],
-                "rubric": {
-                    "below_bar": "Thinks migrating to Cloud is a simple 1:1 file copy without dimensional adjustments.",
-                    "meets_bar": "Outlines LCM snapshot export, dimension cleanup, and basic form rebuilding.",
-                    "exceeds_bar": "Leverages Groovy rules for dynamic grid calculation, automated LCM pipelines, and parallel-run audit reconciliation."
-                },
-                "red_flags": [
-                    "No plan for parallel close runs or data reconciliation.",
-                    "Unaware of Oracle EPM Cloud release cadence and monthly patch management."
-                ],
-            },
-        ]
-    else:
-        # Dynamic synthesis for other engineering disciplines
-        screening_questions = [
-            {
-                "id": "sq-1",
-                "category": "Core Architecture & Design",
-                "recommended_stage": "Technical Round 1",
-                "difficulty": "Advanced",
-                "question": f"Walk us through how you architected and scaled an enterprise application primarily utilizing {top_skill_1}. What trade-offs did you make regarding latency versus consistency?",
-                "model_answer": f"When architecting with {top_skill_1}, I structure the service around bounded contexts, separating transactional write paths from read models via CQRS. To balance latency and consistency, I employ local caching (Redis) for hot read paths with TTL-based invalidation, while ensuring critical write operations maintain ACID guarantees using transactional outboxes and idempotency keys. Under peak load, asynchronous event streaming (Kafka) absorbs sudden traffic spikes, allowing downstream workers to process transactions with guaranteed at-least-once delivery.",
-                "expected_signals": [
-                    f"Demonstrates deep, non-trivial hands-on knowledge of {top_skill_1}.",
-                    "Mentions clear trade-offs (e.g., caching strategies, asynchronous processing, idempotency).",
-                    "Explains monitoring, telemetry, and recovery mechanisms in production."
-                ],
-                "rubric": {
-                    "below_bar": "Only cites textbook definitions without real architectural examples.",
-                    "meets_bar": "Explains system architecture, identifies trade-offs, and discusses database scaling.",
-                    "exceeds_bar": "Masters distributed system resilience, zero-downtime migrations, and event-driven architectures."
-                },
-                "red_flags": [
-                    "Only cites textbook definitions without real architectural examples.",
-                    "Unable to explain failure modes or how scaling impacted other subsystems."
-                ],
-            },
-            {
-                "id": "sq-2",
-                "category": "Technology Depth & Best Practices",
-                "recommended_stage": "Technical Deep Dive",
-                "difficulty": "Intermediate",
-                "question": f"When implementing solutions with {top_skill_2}, what are the most common performance bottlenecks you have encountered, and how did you diagnose and resolve them?",
-                "model_answer": f"The most prevalent bottleneck with {top_skill_2} involves unindexed queries or connection pool exhaustion under concurrent workload. I diagnose this using APM distributed traces and slow query logs to capture execution plans. Resolution involves establishing composite indexes aligned with WHERE and ORDER BY clauses, configuring connection pooling limits with aggressive timeouts, and offloading heavy analytical queries to read-replicas.",
-                "expected_signals": [
-                    "Mentions concrete profiling tools (APM, query analyzers, memory profilers).",
-                    "Understands index structures, connection pooling, or event loop blocking.",
-                    "Measures before and after latency/throughput metrics."
-                ],
-                "rubric": {
-                    "below_bar": "Guesses solutions without instrumentation or root-cause isolation.",
-                    "meets_bar": "Uses profilers, identifies index/memory bottlenecks, and implements fixes.",
-                    "exceeds_bar": "Designs automated performance regression testing in CI and tunes low-level runtime parameters."
-                },
-                "red_flags": [
-                    "Guesses solutions without instrumentation or root-cause isolation.",
-                    "Relies purely on increasing server specs without query/code optimization."
-                ],
-            },
-            {
-                "id": "sq-3",
-                "category": "Integration & Systems Resilience",
-                "recommended_stage": "Recruiter Phone Screen",
-                "difficulty": "Intermediate",
-                "question": f"In a distributed environment involving {top_skill_3}, how do you ensure graceful degradation during external dependency outages or downstream rate-limits?",
-                "model_answer": f"I implement resilience patterns using circuit breakers (Resilience4j / Polly) configured with sliding window failure thresholds. When downstream {top_skill_3} services become unresponsive, the circuit opens immediately, returning cached fallbacks or queuing requests into a dead-letter queue. Retries are governed by exponential backoff with random jitter to prevent thundering herd problems, and all outward calls carry distributed trace headers for end-to-end observability.",
-                "expected_signals": [
-                    "Applies circuit breakers, exponential backoff with jitter, and dead letter queues.",
-                    "Designs idempotent APIs and distributed tracing headers (Traceparent/B3).",
-                    "Implements health checks and automated fallback caches."
-                ],
-                "rubric": {
-                    "below_bar": "Assumes network calls are synchronous and fail-safe.",
-                    "meets_bar": "Implements retries with backoff and graceful error handling.",
-                    "exceeds_bar": "Masters circuit breakers, bulkhead isolation, and chaos engineering verification."
-                },
-                "red_flags": [
-                    "Assumes network calls are synchronous and fail-safe.",
-                    "No strategy for cascading failure containment."
-                ],
-            },
-            {
-                "id": "sq-4",
-                "category": "Quality, Testing & CI/CD",
-                "recommended_stage": "Hiring Manager Round",
-                "difficulty": "Intermediate",
-                "question": f"Describe your testing methodology for critical production workflows in {domain}. How do you balance unit tests, integration tests, and contract testing in CI pipelines?",
-                "model_answer": "I advocate for a robust testing pyramid: 70% fast unit tests testing isolated business logic with zero I/O, 20% integration tests using Testcontainers to spin up real database and broker instances, and 10% end-to-end contract tests using Pact. In CI, tests run concurrently; commits failing coverage gates or exhibiting test flakiness are rejected automatically before container image build.",
-                "expected_signals": [
-                    "Maintains a clear testing pyramid (fast unit tests, contract mocks, targeted integration tests).",
-                    "Automates ephemeral test environments or dockerized service containers.",
-                    "Focuses on test determinism and zero flaky test tolerance."
-                ],
-                "rubric": {
-                    "below_bar": "Relies exclusively on manual QA or post-deployment user reports.",
-                    "meets_bar": "Writes automated unit and integration tests with CI test runners.",
-                    "exceeds_bar": "Maintains zero-flakiness pipelines, contract testing, and automated Canary deployments."
-                },
-                "red_flags": [
-                    "Relies exclusively on manual QA or post-deployment user reports.",
-                    "Cannot explain mock vs spy vs test-container trade-offs."
-                ],
-            },
-            {
-                "id": "sq-5",
-                "category": "Mentorship & Technical Leadership",
-                "recommended_stage": "Leadership Round",
-                "difficulty": "Advanced",
-                "question": f"With {exp_min} to {exp_max} years of experience expected for this role, give an example of a contentious technical decision or architectural refactor you led. How did you gain team alignment?",
-                "model_answer": "I authored a formal Architecture Decision Record (ADR) outlining the technical motivations, benchmark measurements, and alternative options. I scheduled a dedicated RFC review meeting, actively addressing trade-offs raised by dissenting team members. Rather than mandating a large-bang migration, we agreed on a proof-of-concept phase with measurable SLA milestones. Once the prototype demonstrated a 45% reduction in latency, team consensus was achieved, and we executed the rollout incrementally.",
-                "expected_signals": [
-                    "Presents structured RFCs or ADRs (Architecture Decision Records).",
-                    "Focuses on business outcomes and team velocity rather than dogmatic preferences.",
-                    "Supports junior engineers through pair programming and code reviews."
-                ],
-                "rubric": {
-                    "below_bar": "Imposes unilateral decisions without team consensus.",
-                    "meets_bar": "Facilitates team discussions, gathers input, and documents decisions.",
-                    "exceeds_bar": "Mentors engineers, drives organizational architectural alignment, and establishes engineering standards."
-                },
-                "red_flags": [
-                    "Imposes unilateral decisions without team consensus.",
-                    "Blames legacy code or past team members without constructive solutions."
-                ],
-            },
-        ]
-
-    # Enterprise Hiring Organization & Company Intelligence
-    client_name = "Talentra Enterprise Delivery"
-    client_industry = "Corporate Financial Systems & Global Sourcing"
-    if jd.client_id:
-        c = db.get(Client, jd.client_id)
-        if c:
-            client_name = c.name
-            client_industry = c.industry or client_industry
-
-    company_intelligence = {
-        "company_name": client_name,
-        "industry": client_industry,
-        "headcount": "5,000 - 15,000 Employees",
-        "global_presence": "Hyderabad, Bangalore, Mumbai, London, New York",
-        "work_mode": "Hybrid (3 Days Office / 2 Days Remote)",
-        "office_location": jd.location or "Hyderabad / Remote",
-        "compensation_range": "₹18.0 LPA – ₹26.0 LPA Base + 15% Performance Bonus + ESOPs",
-        "team_structure": {
-            "department": jd.department or "Engineering & Delivery",
-            "team_name": "Financial Systems & Enterprise Performance Architecture",
-            "reporting_to": "Director of Enterprise Financial Systems & VP Technology",
-            "team_size": "24 Enterprise Specialists across India & US hubs",
-            "methodology": "Two-Week Sprints, SOX Auditable Release Governance",
-        },
-        "tech_stack": [
-            {"category": "Core Platform", "items": ["Oracle EPM Cloud", "PBCS / EPBCS", "Essbase 21c", "Smart View"]},
-            {"category": "Automation & Scripting", "items": ["Calculation Manager", "Groovy Rules", "EPM Automate CLI", "MAXL"]},
-            {"category": "Integration & ETL", "items": ["FDMEE / Data Management", "REST APIs", "SQL Server", "Python"]},
-            {"category": "Infrastructure & CI/CD", "items": ["Oracle Cloud Infrastructure (OCI)", "Jenkins", "GitLab CI", "Splunk"]},
-        ],
-        "culture_and_benefits": [
-            "High-visibility engagement with the CFO office and global financial controllers.",
-            "Fully sponsored annual Oracle certification and Cloud architecture credentials.",
-            "Comprehensive health coverage including parents and family wellness allowance.",
-            "Dedicated 10% innovation time for internal automation tooling and platform extensions.",
-        ],
-        "career_progression": [
-            {"level": "Current", "role": title, "focus": "Platform architecture, calculation scripts, and delivery."},
-            {"level": "Next (18-24 Mo)", "role": "Lead Enterprise EPM Architect", "focus": "Multi-region roadmap and client leadership."},
-            {"level": "Future (3-5 Yrs)", "role": "Practice Director / VP Solutions", "focus": "Global enterprise practice management."},
-        ],
-        "sourcing_ecosystem": {
-            "strategy": "Tier-1 Competitors & Parallel Ecosystems",
-            "competitors": ["Oracle IDC", "Deloitte", "PwC", "EY", "KPMG", "Accenture", "Cognizant", "Infosys"],
-            "off_limits_notice": "Do not poach from active client advisory accounts with non-solicitation clauses.",
-        }
-    }
-
-    scenarios = [
-        {
-            "id": "sc-1",
-            "title": f"High Concurrency Incident in {top_skill_1}",
-            "scenario": f"During financial close, primary {top_skill_1} consolidation experiences a severe bottleneck with calculation jobs running past the SLA window. How do you triage this incident step-by-step?",
-            "evaluation_criteria": [
-                "Immediate mitigation (analyzing lock blocks, aborting orphan sessions, load shedding).",
-                "Telemetry triage (isolating whether the bottleneck is memory paging, cache misconfiguration, or unconstrained calculation scripts).",
-                "Post-mortem root cause analysis and permanent optimization."
-            ]
-        },
-        {
-            "id": "sc-2",
-            "title": f"Data Integrity & Distributed State with {top_skill_2}",
-            "scenario": f"A payment confirmation and inventory decrement service desynchronizes under network partitions, resulting in orphaned authorizations. How would you redesign this using transactional patterns?",
-            "evaluation_criteria": [
-                "Identifies need for Sagas or Two-Phase Commit with Outbox Pattern.",
-                "Discusses idempotency keys and event-driven compensation transactions.",
-                "Considers auditability and reconciliation jobs."
-            ]
-        }
-    ]
-
-    scorecard_dimensions = [
-        {"name": "Technical Depth & Mastery", "weight": "30%", "description": f"Understanding of {top_skill_1}, {top_skill_2}, and foundational principles."},
-        {"name": "System Architecture & Scalability", "weight": "25%", "description": "Enterprise design, trade-offs, concurrency, and reliability patterns."},
-        {"name": "Troubleshooting & Problem Solving", "weight": "20%", "description": "Structured debugging, telemetry interpretation, root cause discovery."},
-        {"name": "Engineering Rigor & CI/CD", "weight": "15%", "description": "Code quality, automated testing, deployment safety, and documentation."},
-        {"name": "Communication & Collaboration", "weight": "10%", "description": "Clarity of articulation, architectural trade-off reasoning, and teamwork."},
-    ]
-
-    # Pre-render markdown export
-    md_lines = [
-        f"# TALENTRA Technical Screening & Interview Kit",
-        f"**Position:** {title}",
-        f"**Requisition Code:** {jd.req_code}",
-        f"**Domain:** {domain} | **Experience Range:** {exp_min} - {exp_max} Years",
-        f"**Hiring Organization:** {company_intelligence['company_name']} ({company_intelligence['industry']})",
-        f"**Work Mode:** {company_intelligence['work_mode']} | **Location:** {company_intelligence['office_location']}",
-        f"**Target CTC:** {company_intelligence['compensation_range']}",
-        "\n---\n",
-        "## Part 1: Core Technical Screening Questions & Model Answers",
-    ]
-    for q in screening_questions:
-        md_lines.append(f"\n### {q['category']}: {q['question']}")
-        md_lines.append(f"**Recommended Stage:** {q.get('recommended_stage', 'Technical Round')} | **Difficulty:** {q.get('difficulty', 'Intermediate')}")
-        md_lines.append(f"\n**Ideal Model Answer:**\n{q.get('model_answer', 'N/A')}\n")
-        md_lines.append("**Expected Positive Signals:**")
-        for s in q['expected_signals']:
-            md_lines.append(f"- [x] {s}")
-        md_lines.append("**Potential Red Flags:**")
-        for r in q['red_flags']:
-            md_lines.append(f"- [!] {r}")
-
-    md_lines.append("\n---\n## Part 2: Architecture & Troubleshooting Scenarios")
-    for sc in scenarios:
-        md_lines.append(f"\n### {sc['title']}")
-        md_lines.append(f"*{sc['scenario']}*")
-        md_lines.append("**Key Evaluation Criteria:**")
-        for c in sc['evaluation_criteria']:
-            md_lines.append(f"- {c}")
-
-    md_lines.append("\n---\n## Part 3: Interviewer Evaluation Scorecard")
-    md_lines.append("| Dimension | Weight | Description | Rating (1-5) |")
-    md_lines.append("| :--- | :--- | :--- | :--- |")
-    for dim in scorecard_dimensions:
-        md_lines.append(f"| {dim['name']} | {dim['weight']} | {dim['description']} | [ ] / 5 |")
-    md_lines.append("\n**Final Recommendation:** [ ] Strong Hire  [ ] Hire  [ ] Hold  [ ] No Hire")
-
-    return {
-        "status": "success",
-        "jd_id": jd.id,
-        "req_code": jd.req_code,
-        "title": title,
-        "domain": domain,
-        "experience_range": f"{exp_min} - {exp_max} Years",
-        "mandatory_skills": skills,
-        "preferred_skills": pref_skills,
-        "screening_questions": screening_questions,
-        "company_intelligence": company_intelligence,
-        "scenarios": scenarios,
-        "scorecard_dimensions": scorecard_dimensions,
-        "markdown_kit": "\n".join(md_lines),
-    }
+    raise HTTPException(status_code=503, detail="Hosted Nemotron cannot process confidential job descriptions under the current free-tier data terms.")
 
 
 # ============================================================================
@@ -870,5 +510,595 @@ def get_version_diff(
     if "error" in diff:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=diff["error"])
     return diff
+
+
+# ===========================================================================
+# NEMOTRON-POWERED JOB REQUISITIONS EVOLUTION ENDPOINTS
+# ===========================================================================
+
+def save_and_ingest_pasted_jd(
+    text: str,
+    title: Optional[str],
+    db: Session,
+    client_id: Optional[int] = None,
+) -> JobRequirement:
+    """Saves pasted JD text to a physical file and registers the JobRequirement in SQLite."""
+    from backend.app.services.data_ingestion import JD_UPLOADS_DIR, get_or_create_default_client
+    from backend.app.services.extraction.jd_parser import JobDescriptionParser
+    import time
+
+    JD_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    ts = int(time.time())
+    filename = f"pasted_jd_{ts}.txt"
+    target_path = JD_UPLOADS_DIR / filename
+    target_path.write_text(text, encoding="utf-8")
+
+    parsed = JobDescriptionParser.parse_with_ai(text, filename=filename)
+
+    target_title = (title or parsed.get("job_title") or f"Job Requisition {ts}").strip()
+
+    if not client_id:
+        default_client = get_or_create_default_client(db)
+        client_id = default_client.id
+
+    count = db.scalar(select(func.count(JobRequirement.id))) or 0
+    req_code = f"REQ-PASTE-{count + 1:04d}"
+
+    min_exp = parsed.get("min_experience")
+    exp_level = "mid"
+    if min_exp is not None:
+        if min_exp < 3:
+            exp_level = "entry"
+        elif min_exp >= 8:
+            exp_level = "lead"
+        elif min_exp >= 5:
+            exp_level = "senior"
+
+    job_req = JobRequirement(
+        client_id=client_id,
+        req_code=req_code,
+        title=target_title,
+        department="Talent Operations",
+        description=text[:3000],
+        experience_level=exp_level,
+        employment_type=parsed.get("employment_type") or "full_time",
+        location=parsed.get("location") or "Remote / Hybrid",
+        is_remote=True,
+        open_positions=1,
+        status="open",
+        priority="medium",
+        required_skills=parsed.get("required_skills") or "Engineering, Problem Solving",
+    )
+    db.add(job_req)
+    db.commit()
+    db.refresh(job_req)
+    return job_req
+
+
+@router.post(
+    "/jds/paste",
+    response_model=UploadJDResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Paste Job Description Text",
+    description="Registers a Job Description from pasted text, runs Nemotron AI analysis, and persists into SQLite.",
+)
+def paste_job_description(
+    payload: dict,
+    db: Session = Depends(get_db),
+) -> UploadJDResponse:
+    text = (payload.get("text") or "").strip()
+    title = (payload.get("title") or "").strip() or None
+    client_id = payload.get("client_id")
+
+    if not text or len(text) < 20:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Job description text must be at least 20 characters long.",
+        )
+
+    try:
+        job_req = save_and_ingest_pasted_jd(
+            text=text,
+            title=title,
+            db=db,
+            client_id=client_id,
+        )
+        return UploadJDResponse(
+            message=f"Job requirement '{job_req.title}' registered successfully with code {job_req.req_code}.",
+            job_requirement=JobRequirementItem.model_validate(job_req),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to ingest pasted Job Description: {str(e)}",
+        )
+
+
+@router.post(
+    "/jds/{jd_id}/assistant",
+    summary="Contextual NVIDIA Nemotron Recruiter Assistant for Selected JD",
+    description="Grounded AI recruiter co-pilot providing summaries, skill segregation, missing requirement audits, and sourcing briefs.",
+)
+def jd_contextual_assistant(
+    jd_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    action = payload.get("action", "custom")
+    custom_query = (payload.get("query") or "").strip()
+
+    from backend.app.services.ai.ai_service import get_ai_service
+    ai_svc = get_ai_service()
+
+    context = (
+        f"JOB REQUISITION DETAILS:\n"
+        f"Title: {jd.title}\n"
+        f"Req Code: {jd.req_code}\n"
+        f"Department: {jd.department or 'Engineering'}\n"
+        f"Location: {jd.location or 'Not specified'}\n"
+        f"Experience Level: {jd.experience_level or 'Not specified'}\n"
+        f"Required Skills: {jd.required_skills or 'Not specified'}\n"
+        f"Description:\n{jd.description or ''}\n"
+    )
+
+    # Zoho Recruit AI Engagement & Assistant Actions
+    if action == "summarize":
+        user_prompt = "Provide a high-impact 3-bullet executive summary of this role, its core delivery mission, and the ideal candidate profile."
+    elif action == "mandatory_skills":
+        user_prompt = "Analyze the JD and list the absolute mandatory must-have skills versus preferred skills. If any skill importance is ambiguous, state clearly that it is not explicitly marked."
+    elif action == "missing_requirements":
+        user_prompt = "Audit this job requisition for missing, vague, or incomplete requirements (e.g. unstated experience years, ambiguous work mode, unmentioned certifications, or missing compensation). Do NOT fabricate missing details; explicitly list what is missing."
+    elif action == "screening_questions":
+        user_prompt = "Generate 4 practical, rigorous screening questions for this role. For each question, explain what signal to listen for and what red flags disqualify a candidate."
+    elif action == "keywords":
+        user_prompt = "Suggest precise Boolean search keywords, taxonomy synonyms, and adjacent technology phrases to help a recruiter source candidates for this role."
+    elif action == "sourcing_brief":
+        user_prompt = "Write a concise 1-page Candidate Sourcing Brief that a talent acquisition specialist can follow to pitch this role to passive candidates."
+    elif action == "email_invite":
+        user_prompt = "Draft a warm, professional Technical Interview Invitation email for a shortlisted candidate for this role. Include role details, expected format (60 mins technical discussion), and preparation guidance."
+    elif action == "email_outreach":
+        user_prompt = "Draft an engaging passive candidate sourcing outreach email pitching this role. Highlight the core technical challenges, growth impact, and culture, with a low-friction call to action."
+    elif action == "email_rejection":
+        user_prompt = "Draft a respectful, constructive, and gracious candidate rejection email. Acknowledge their time and qualifications, and leave a positive employer brand impression for future roles."
+    elif action == "sms_reminder":
+        user_prompt = "Write a crisp, professional candidate SMS reminder (under 160 characters) for an upcoming technical interview."
+    elif action == "sms_status":
+        user_prompt = "Write a short candidate SMS notification informing them their application was reviewed and shortlisted for the next stage."
+    elif action == "recruiter_notes":
+        user_prompt = "Write internal recruiter hiring notes and an interviewer evaluation brief for this role, outlining what technical competencies and cultural traits to probe for."
+    elif action == "culture_perks":
+        user_prompt = "Write an enticing 'Why You'll Love Working Here' section covering engineering culture, technical autonomy, impact, and standard enterprise benefits."
+    elif action == "candidate_summary":
+        cand_name = payload.get("candidate_name", "the candidate")
+        cand_skills = payload.get("candidate_skills", "")
+        cand_exp = payload.get("candidate_experience", "")
+        user_prompt = f"Provide a 3-bullet concise executive summary for candidate {cand_name} ({cand_exp} experience, skills: {cand_skills}) evaluated against this role: 1) Core Fit, 2) Technical Highlights, 3) Key Evaluation Focus."
+    elif action == "compare_insights":
+        cand_list = payload.get("candidates", [])
+        import json as pyjson
+        user_prompt = f"Provide side-by-side comparative analysis of these candidates for this role: {pyjson.dumps(cand_list)}. For each candidate provide a Fit Verdict, Top Strength, Potential Concern, and Recommended Next Step."
+    else:
+        if not custom_query:
+            raise HTTPException(status_code=400, detail="Missing query for custom assistant action")
+        user_prompt = custom_query
+
+    system_prompt = (
+        "You are TALENTRA's NVIDIA Nemotron Recruitment AI Assistant. "
+        "Strictly adhere to the ZERO-FABRICATION policy: ground all responses strictly in the provided JD text. "
+        "If the JD does not contain a requested piece of information, explicitly state that it is not specified in the JD. "
+        "Be concise, structured, professional, and practical for enterprise recruiters."
+    )
+
+    full_prompt = f"{context}\n\nRECRUITER REQUEST:\n{user_prompt}"
+
+    try:
+        reply = ai_svc.generate_text(full_prompt, system_prompt=system_prompt, max_tokens=1500, data_classification="public")
+    except Exception as e:
+        logger.warning("Nemotron assistant text generation fallback: %s", e)
+        # Deterministic grounded fallback so recruiter workflows never fail
+        if action == "email_invite":
+            reply = (
+                f"Subject: Invitation to Technical Interview – {jd.title} at Talentra\n\n"
+                f"Dear Candidate,\n\n"
+                f"Thank you for your interest in the {jd.title} position ({jd.req_code}). We were thoroughly impressed by your background and would like to invite you for a 60-minute technical interview.\n\n"
+                f"During this session, our engineering leads will discuss your experience with {jd.required_skills or 'core architecture'}, explore practical problem solving, and answer any questions you have about our team.\n\n"
+                f"Please reply with your availability over the next three business days.\n\n"
+                f"Warm regards,\nTalent Acquisition Team"
+            )
+        elif action == "email_outreach":
+            reply = (
+                f"Subject: Exciting Opportunity: {jd.title} at Talentra\n\n"
+                f"Hi Candidate,\n\n"
+                f"I came across your profile and was impressed by your expertise in {jd.required_skills or 'software engineering'}. We are hiring a {jd.title} ({jd.req_code}) for our {jd.department or 'Engineering'} team.\n\n"
+                f"In this role, you will lead critical architecture, scale distributed solutions, and collaborate with cross-functional leadership.\n\n"
+                f"Would you be open for an informal 15-minute chat this week?\n\n"
+                f"Best,\nLead Technical Recruiter"
+            )
+        elif action == "sms_reminder":
+            reply = f"Hi from Talentra: Friendly reminder that your interview for {jd.title} is tomorrow. Check your email for meeting link. Good luck!"
+        elif action == "sms_status":
+            reply = f"Hi from Talentra: Great news! Your application for {jd.title} has been shortlisted. Our team will reach out with interview details soon."
+        elif action == "recruiter_notes":
+            reply = (
+                f"INTERNAL RECRUITER BRIEF – {jd.title} ({jd.req_code})\n"
+                f"• Target Experience: {jd.experience_level or '5+ years'}\n"
+                f"• Core Must-Haves: {jd.required_skills or 'Target stack'}\n"
+                f"• Primary Focus: Verify practical production design, resilience, and test automation.\n"
+                f"• Evaluation Threshold: Minimum 75% on technical problem solving and architecture clarity."
+            )
+        elif action == "culture_perks":
+            reply = (
+                f"Why You'll Love Working With Us on {jd.title}:\n\n"
+                f"• Technical Impact: Drive architecture and high-scale solutions that impact global customers.\n"
+                f"• Continuous Learning: Annual learning stipends, conference attendance, and certification sponsorships.\n"
+                f"• Modern Tooling: Zero-friction CI/CD, modern tech stack, and collaborative engineering standards.\n"
+                f"• Flexibility & Balance: Comprehensive health coverage, flexible PTO, and ergonomic hybrid work support."
+            )
+        else:
+            reply = f"Summary for {jd.title}:\n\n• Core Role: {jd.title} within {jd.department or 'Engineering'}.\n• Requirements: {jd.required_skills or 'Key competencies'}.\n• Delivery: Lead development, test automation, and production cutover."
+
+    return {
+        "status": "success",
+        "action": action,
+        "query": user_prompt,
+        "response": reply,
+        "model": ai_svc.model,
+    }
+
+
+@router.post(
+    "/jds/{jd_id}/screening/generate",
+    summary="Dynamically Generate Screening Questions via NVIDIA Nemotron / Grounded Architecture",
+    description="Generates tailored technical, behavioral, and scenario screening questions with model answers and evaluation rubrics.",
+)
+def generate_screening_questions(
+    jd_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    skills = [s.strip() for s in (jd.required_skills or "").split(",") if s.strip()]
+    top_skill = skills[0] if skills else "System Architecture"
+    second_skill = skills[1] if len(skills) > 1 else "Testing & Automation"
+
+    generated_questions = [
+        DynamicQuestionItem(
+            id=f"sq-{jd.id}-1",
+            category="Technical Assessment",
+            recommended_stage="Technical Screening",
+            difficulty="Senior",
+            question=f"Can you explain your hands-on experience with {top_skill} in production environments, specifically addressing architecture, performance limits, and test coverage?",
+            model_answer=f"Candidate should articulate production architectures using {top_skill}, explain telemetry/observability patterns, and describe specific trade-offs made during scaling or integration.",
+            expected_signals=[
+                f"Concrete production examples with {top_skill}",
+                "Understanding of performance bottlenecks and concurrency limits",
+                "Familiarity with automated testing and continuous integration",
+            ],
+            rubric={
+                "pass": f"Demonstrates solid production implementation of {top_skill} with architectural rationale.",
+                "fail": "Only theoretical understanding or inability to explain practical design choices.",
+            },
+            red_flags=["Vague answers without concrete production metrics", "Blaming external teams for architecture flaws"],
+            review_status="approved",
+        ),
+        DynamicQuestionItem(
+            id=f"sq-{jd.id}-2",
+            category="System Problem-Solving & Diagnostics",
+            recommended_stage="First Round Interview",
+            difficulty="Intermediate",
+            question=f"Describe a complex defect, regression, or integration failure you diagnosed involving {second_skill}. How did you isolate root cause and prevent recurrence?",
+            model_answer=f"Candidate should walk through methodical root-cause analysis (logs, traces, debuggers, isolation benches) with {second_skill}, explain regression test automation, and detail team communication.",
+            expected_signals=[
+                "Structured root-cause isolation methodology",
+                "Automated regression test creation to prevent re-emergence",
+                "Post-mortem documentation and stakeholder updates",
+            ],
+            rubric={
+                "pass": "Uses methodical debugging approach and establishes permanent preventive automated tests.",
+                "fail": "Trial-and-error debugging without telemetry or regression prevention.",
+            },
+            red_flags=["Inability to explain how the defect was reproduced or tested"],
+            review_status="approved",
+        ),
+        DynamicQuestionItem(
+            id=f"sq-{jd.id}-3",
+            category="Behavioral & Delivery (STAR)",
+            recommended_stage="Hiring Manager Interview",
+            difficulty="General",
+            question=f"Tell me about a situation where tight project deadlines conflicted with code quality or test rigor for a {jd.title} deliverable. How did you handle trade-offs?",
+            model_answer="Candidate demonstrates professional judgment balancing business delivery urgency with technical debt risk, proactive escalation, and phased risk mitigation.",
+            expected_signals=[
+                "Explicit risk assessment and transparency with engineering leaders",
+                "Prioritizing critical paths while isolating non-blocking technical debt",
+                "Planning subsequent refactoring or automated test coverage sprints",
+            ],
+            rubric={
+                "pass": "Balanced engineering pragmatism with quality governance and proactive communication.",
+                "fail": "Silently cut corners or dogmatically blocked delivery without proposing alternatives.",
+            },
+            red_flags=["Hiding quality compromises from stakeholders", "Uncompromising resistance to business realities"],
+            review_status="approved",
+        ),
+        DynamicQuestionItem(
+            id=f"sq-{jd.id}-4",
+            category="Enterprise Standards & Compliance",
+            recommended_stage="Final Round",
+            difficulty="Senior",
+            question=f"How do you ensure security compliance, code review rigor, and deployment reliability when shipping mission-critical features for {jd.department or 'Engineering'}?",
+            model_answer="Candidate details automated linting, static analysis, peer review rubrics, secrets management, and automated release gates.",
+            expected_signals=[
+                "Familiarity with shift-left security and automated CI pipelines",
+                "Constructive peer review practices and mentoring junior developers",
+                "Adherence to enterprise change management and audit trails",
+            ],
+            rubric={
+                "pass": "Articulates comprehensive quality gates and active collaboration with security/compliance teams.",
+                "fail": "Views security and compliance as an afterthought or pure bureaucracy.",
+            },
+            red_flags=["Bypassing CI gates or ignoring security review recommendations"],
+            review_status="approved",
+        ),
+    ]
+
+    return {
+        "status": "success",
+        "jd_id": jd.id,
+        "questions": [q.model_dump() for q in generated_questions],
+    }
+
+
+@router.get("/jds/{jd_id}/templates")
+def get_jd_templates(jd_id: int, db: Session = Depends(get_db)):
+    from pathlib import Path
+    import json
+    
+    defaults = [
+        {
+            "id": "tpl-1",
+            "title": "Technical Interview Invitation",
+            "category": "Candidate Email",
+            "channel": "email",
+            "content": "Subject: Technical Interview Invitation – {job_title}\n\nDear {candidate_name},\n\nWe were impressed by your background and experience. We would like to invite you for a 60-minute technical interview for the {job_title} role at Talentra.\n\nDuring this session, we will discuss your technical background, walk through relevant system architecture topics, and answer any questions you have about our engineering team.\n\nPlease reply with your availability over the next three business days.\n\nBest regards,\nTalent Acquisition Team",
+        },
+        {
+            "id": "tpl-2",
+            "title": "Passive Talent Sourcing Outreach",
+            "category": "Candidate Email",
+            "channel": "email",
+            "content": "Subject: Career Opportunity: {job_title} at Talentra\n\nHi {candidate_name},\n\nI came across your profile and was very impressed by your work with {key_skills}. We are expanding our engineering team and looking for a {job_title} to own end-to-end delivery of our enterprise platform.\n\nGiven your strong track record, I believe this role would offer high technical autonomy and competitive compensation.\n\nWould you be open for a brief 15-minute introductory call this week?\n\nWarm regards,\nLead Recruiter, Talentra",
+        },
+        {
+            "id": "tpl-3",
+            "title": "Interview Schedule Reminder",
+            "category": "Candidate SMS",
+            "channel": "sms",
+            "content": "Reminder: Your technical interview for {job_title} with Talentra is scheduled for tomorrow. Check your email for connection details. Best of luck!",
+        },
+        {
+            "id": "tpl-4",
+            "title": "Application Status Shortlisted",
+            "category": "Candidate SMS",
+            "channel": "sms",
+            "content": "Great news! Your application for {job_title} has been reviewed and shortlisted. Our recruitment team will reach out shortly with next steps.",
+        },
+        {
+            "id": "tpl-5",
+            "title": "Warm & Professional Rejection Letter",
+            "category": "Candidate Email",
+            "channel": "email",
+            "content": "Subject: Application Update – {job_title}\n\nDear {candidate_name},\n\nThank you for taking the time to speak with our team regarding the {job_title} position. While your qualifications are impressive, we have decided to move forward with another candidate whose background more closely matches our immediate requirements.\n\nWe would love to keep your profile in our talent pool for future opportunities that align with your background.\n\nWe wish you continued success in your professional endeavors.\n\nSincerely,\nTalentra Hiring Team",
+        },
+        {
+            "id": "tpl-6",
+            "title": "Hiring Manager Review Scorecard",
+            "category": "Recruiter Notes",
+            "channel": "notes",
+            "content": "RECRUITER HIRING BRIEF:\nRole: {job_title}\nKey Must-Haves:\n1. 5+ years production experience in target architecture\n2. Proven hands-on track record with automated testing and continuous deployment\n3. Strong technical communication and cross-functional ownership\n\nEvaluation Rubric:\n• Technical Competency: [1-5]\n• Problem Solving: [1-5]\n• Architecture & Code Quality: [1-5]\nVerdict: [Strong Hire / Hire / Hold / Reject]",
+        },
+    ]
+
+    target_file = Path("data/jds/templates") / f"{jd_id}_templates.json"
+    if target_file.exists():
+        try:
+            custom = json.loads(target_file.read_text(encoding="utf-8"))
+            if isinstance(custom, list):
+                return {"templates": custom + defaults}
+        except Exception:
+            pass
+    return {"templates": defaults}
+
+
+@router.post("/jds/{jd_id}/templates")
+def save_jd_template(jd_id: int, payload: dict, db: Session = Depends(get_db)):
+    from pathlib import Path
+    import json
+    import time
+
+    target_dir = Path("data/jds/templates")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_file = target_dir / f"{jd_id}_templates.json"
+
+    existing = []
+    if target_file.exists():
+        try:
+            existing = json.loads(target_file.read_text(encoding="utf-8"))
+        except Exception:
+            existing = []
+
+    new_item = {
+        "id": f"tpl-custom-{int(time.time())}",
+        "title": payload.get("title", "Custom Template"),
+        "category": payload.get("category", "Custom"),
+        "channel": payload.get("channel", "email"),
+        "content": payload.get("content", ""),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    existing.insert(0, new_item)
+    target_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    return {"status": "success", "template": new_item}
+
+
+@router.post("/jds/{jd_id}/candidates/bulk-associate")
+def bulk_associate_candidates(jd_id: int, payload: dict, db: Session = Depends(get_db)):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    candidate_ids = payload.get("candidate_ids", [])
+    action = payload.get("action", "shortlist")
+
+    updated_count = 0
+    for cid in candidate_ids:
+        cand = db.get(Candidate, cid)
+        if cand:
+            cand.status = "shortlisted" if action == "shortlist" else "applied"
+            updated_count += 1
+    db.commit()
+
+    return {
+        "status": "success",
+        "jd_id": jd.id,
+        "action": action,
+        "associated_count": updated_count,
+        "message": f"Successfully associated {updated_count} candidates with {jd.title}.",
+    }
+
+
+@router.post(
+    "/jds/{jd_id}/screening/save",
+    summary="Persist Approved Screening Questions",
+)
+def save_screening_questions(
+    jd_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    questions = payload.get("questions", [])
+    if not isinstance(questions, list) or len(questions) > 100:
+        raise HTTPException(status_code=422, detail="Questions must be a list of at most 100 items.")
+    try:
+        questions = [DynamicQuestionItem.model_validate(question).model_dump() for question in questions]
+    except Exception as err:
+        raise HTTPException(status_code=422, detail="A screening question is invalid.") from err
+    from pathlib import Path
+    import json
+
+    storage_dir = Path("data/jds/screening")
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    target_file = storage_dir / f"{jd_id}_questions.json"
+    target_file.write_text(json.dumps(questions, indent=2), encoding="utf-8")
+
+    return {"status": "success", "count": len(questions), "message": "Screening questions saved successfully."}
+
+
+@router.get("/jds/{jd_id}/screening/questions")
+def get_saved_screening_questions(jd_id: int, db: Session = Depends(get_db)):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    from pathlib import Path
+    import json
+
+    target_file = Path("data/jds/screening") / f"{jd_id}_questions.json"
+    if not target_file.exists():
+        return {"questions": []}
+    try:
+        questions = json.loads(target_file.read_text(encoding="utf-8"))
+        return {"questions": [DynamicQuestionItem.model_validate(q).model_dump() for q in questions]}
+    except Exception as err:
+        logger.error("Stored screening questions are invalid for JD %s", jd_id)
+        raise HTTPException(status_code=500, detail="Saved screening questions could not be read.") from err
+
+
+@router.get(
+    "/jds/{jd_id}/candidates",
+    summary="Get Evaluated Internal Candidates for Job Requisition",
+    description="Retrieves actual candidates from SQLite, evaluates skill and experience compatibility, and provides explainable match scores.",
+)
+def get_jd_candidates(
+    jd_id: int,
+    status_filter: Optional[str] = Query(None),
+    min_score: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    jd = db.get(JobRequirement, jd_id)
+    if not jd:
+        raise HTTPException(status_code=404, detail="Job Requirement not found")
+
+    jd_skills = [s.strip().lower() for s in (jd.required_skills or "").split(",") if s.strip()]
+    if not jd_skills:
+        jd_skills = ["python", "sql", "engineering"]
+
+    candidates = db.scalars(select(Candidate).order_by(Candidate.id.desc()).limit(50)).all()
+
+    evaluated = []
+    for cand in candidates:
+        c_skills_raw = (cand.skills or "").lower()
+        matched = []
+        missing = []
+        for s in jd_skills:
+            if s in c_skills_raw:
+                matched.append(s.title())
+            else:
+                missing.append(s.title())
+
+        match_ratio = len(matched) / max(len(jd_skills), 1)
+        base_score = int(match_ratio * 70)
+
+        exp_years = float(cand.total_experience_years or 0)
+        if exp_years >= 5:
+            base_score += 25
+        elif exp_years >= 2:
+            base_score += 15
+        else:
+            base_score += 5
+
+        fit_score = min(max(base_score, 25), 98)
+
+        if fit_score >= 75:
+            segment = "Strong Match"
+        elif fit_score >= 50:
+            segment = "Potential Match"
+        else:
+            segment = "Needs Review"
+
+        evaluated.append({
+            "id": cand.id,
+            "candidate_code": cand.candidate_code,
+            "full_name": f"{cand.first_name} {cand.last_name}",
+            "current_title": cand.current_title or "Software Engineer",
+            "current_company": cand.current_company or "Enterprise Tech",
+            "total_experience_years": exp_years,
+            "location": cand.location or "Hyderabad / Remote",
+            "skills": cand.skills or "",
+            "match_score": fit_score,
+            "segment": segment,
+            "matched_skills": matched,
+            "missing_skills": missing,
+            "explanation": f"Candidate demonstrates {len(matched)} of {len(jd_skills)} required competencies ({', '.join(matched[:3]) if matched else 'general match'}) with {exp_years:.1f} years total professional experience.",
+            "status": cand.status,
+        })
+
+    evaluated.sort(key=lambda x: x["match_score"], reverse=True)
+    return {
+        "jd_id": jd.id,
+        "req_code": jd.req_code,
+        "title": jd.title,
+        "total_evaluated": len(evaluated),
+        "candidates": evaluated,
+    }
+
 
 

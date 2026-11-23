@@ -6,7 +6,9 @@ and Candidate Resumes, including 1-on-1 deep comparison, multi-candidate matrix,
 and on-the-fly text comparisons with verbatim citations and zero hallucination.
 """
 
+import re
 import json
+from types import SimpleNamespace
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -15,6 +17,8 @@ from sqlalchemy import or_, select
 from backend.app.database.session import get_db
 from backend.app.models.job_requirement import JobRequirement
 from backend.app.models.candidate import Candidate
+from backend.app.services.extraction.jd_parser import JobDescriptionParser
+from backend.app.services.extraction.resume_parser import ResumeParser
 
 router = APIRouter(prefix="/api/v1/comparison", tags=["JD & Resume Comparison"])
 
@@ -135,23 +139,213 @@ DEFAULT_JD_SPECS = [
 ]
 
 
-def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_dynamic_jd_specs(target_jd: Optional[JobRequirement] = None, raw_text: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Dynamically derives 16 grounded evaluation specifications from the target JD.
+    If the JD is Hyperion/EPM, retains canonical Enterprise EPM specifications.
+    For any other JD (Python, Java, React, SAP, etc.), dynamically constructs specifications
+    derived from the actual role requirements, experience, and domain.
+    """
+    title = (target_jd.title if target_jd else "Software Engineering Role") or "Software Engineering Role"
+    title_lower = title.lower()
+
+    # If role is Hyperion/EPM, return the battle-tested 16 canonical specifications
+    if "hyperion" in title_lower or "epm" in title_lower:
+        return DEFAULT_JD_SPECS
+
+    skills_raw = getattr(target_jd, "required_skills", "") or ""
+    if isinstance(skills_raw, list):
+        skills = skills_raw
+    else:
+        skills = [s.strip() for s in str(skills_raw).split(",") if s.strip()]
+
+    pref_raw = getattr(target_jd, "secondary_skills", "") or ""
+    if isinstance(pref_raw, list):
+        pref_skills = pref_raw
+    else:
+        pref_skills = [s.strip() for s in str(pref_raw).split(",") if s.strip()]
+    if not pref_skills and len(skills) > 4:
+        pref_skills = skills[4:]
+
+    # Extract experience level
+    exp_level = ((target_jd.experience_level if target_jd else "mid") or "mid").lower()
+    min_exp = 3.0
+    if exp_level == "entry":
+        min_exp = 1.0
+    elif exp_level == "senior":
+        min_exp = 5.0
+    elif exp_level in ("lead", "principal", "executive"):
+        min_exp = 8.0
+
+    loc = (target_jd.location if target_jd else "Hyderabad / Remote") or "Hyderabad / Remote"
+    loc_tokens = [w.strip().lower() for w in re.split(r"[/, ]+", loc) if len(w.strip()) > 2]
+    if "remote" not in loc_tokens:
+        loc_tokens.append("remote")
+    if "hybrid" not in loc_tokens:
+        loc_tokens.append("hybrid")
+
+    specs = []
+    # 1-4 Mandatory Skills
+    for i in range(4):
+        sk = skills[i] if i < len(skills) else f"Core Skill {i+1}"
+        specs.append({
+            "id": f"spec-{len(specs)+1}",
+            "category": "Mandatory Skills",
+            "title": sk,
+            "is_mandatory": True,
+            "keywords": [sk.lower(), sk.lower().replace(" ", "")],
+        })
+
+    # 5-7 Tools and Technologies
+    tools = pref_skills[:3] if pref_skills else (skills[4:7] if len(skills) > 4 else ["Cloud Platforms", "CI/CD Pipelines", "Containerization"])
+    for i in range(3):
+        t = tools[i] if i < len(tools) else f"Supporting Tech {i+1}"
+        specs.append({
+            "id": f"spec-{len(specs)+1}",
+            "category": "Tools and Technologies",
+            "title": t,
+            "is_mandatory": False,
+            "keywords": [t.lower()],
+        })
+
+    # 8-11 Key Responsibilities
+    responsibilities = [
+        f"Design & Build Scalable Systems for {title}",
+        "Production Reliability, Diagnostics & Performance Tuning",
+        "Maintain Clean Code Standards, Code Reviews & Testing",
+        "Collaborate with Cross-Functional Product & Engineering Teams",
+    ]
+    for r in responsibilities:
+        specs.append({
+            "id": f"spec-{len(specs)+1}",
+            "category": "Key Responsibilities",
+            "title": r,
+            "is_mandatory": True,
+            "keywords": [w.lower() for w in r.split() if len(w) > 4],
+        })
+
+    # 12-13 Domain Knowledge
+    dept = (target_jd.department if target_jd else "Engineering") or "Engineering"
+    specs.append({
+        "id": f"spec-{len(specs)+1}",
+        "category": "Domain Knowledge",
+        "title": f"{dept} Architecture & Best Practices",
+        "is_mandatory": True,
+        "keywords": [dept.lower(), "architecture", "design patterns"],
+    })
+    specs.append({
+        "id": f"spec-{len(specs)+1}",
+        "category": "Domain Knowledge",
+        "title": "Security, Compliance & Data Protection Standards",
+        "is_mandatory": False,
+        "keywords": ["security", "compliance", "governance", "sox", "audit"],
+    })
+
+    # 14 Minimum Experience
+    specs.append({
+        "id": f"spec-{len(specs)+1}",
+        "category": "Minimum Experience",
+        "title": f"{int(min_exp)}+ Years Hands-On Professional Experience",
+        "is_mandatory": True,
+        "min_exp": min_exp,
+    })
+
+    # 15 Location and Work-Mode
+    specs.append({
+        "id": f"spec-{len(specs)+1}",
+        "category": "Location and Work-Mode",
+        "title": f"{loc} (Hybrid / Remote Alignment)",
+        "is_mandatory": True,
+        "locations": loc_tokens,
+    })
+
+    # 16 Preferred Qualifications
+    pref_qual = pref_skills[3] if len(pref_skills) > 3 else "B.Tech / M.Tech / Equivalent Degree"
+    specs.append({
+        "id": f"spec-{len(specs)+1}",
+        "category": "Preferred Qualifications",
+        "title": pref_qual,
+        "is_mandatory": False,
+        "keywords": [pref_qual.lower(), "btech", "degree", "certified", "certification"],
+    })
+
+    return specs
+
+
+def build_text_jd_specs(jd_text: str) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """Extract only explicit JD requirements for a local pasted-text comparison."""
+    parsed = JobDescriptionParser.parse(jd_text)
+    specs: List[Dict[str, Any]] = []
+
+    for skill in parsed["required_skills_list"]:
+        specs.append({
+            "id": f"text-spec-{len(specs) + 1}",
+            "category": "Mandatory Skills",
+            "title": skill,
+            "is_mandatory": True,
+            "keywords": [skill.lower()],
+        })
+    for skill in parsed["preferred_skills_list"]:
+        specs.append({
+            "id": f"text-spec-{len(specs) + 1}",
+            "category": "Preferred Skills",
+            "title": skill,
+            "is_mandatory": False,
+            "keywords": [skill.lower()],
+        })
+    if parsed["min_experience_years"] is not None:
+        specs.append({
+            "id": f"text-spec-{len(specs) + 1}",
+            "category": "Minimum Experience",
+            "title": f"{parsed['min_experience_years']:g}+ years experience",
+            "is_mandatory": True,
+            "min_exp": parsed["min_experience_years"],
+        })
+    if parsed["location"]:
+        locations = [parsed["location"].lower()]
+        if parsed["work_mode"] == "Remote":
+            locations.append("remote")
+        specs.append({
+            "id": f"text-spec-{len(specs) + 1}",
+            "category": "Location",
+            "title": parsed["location"],
+            "is_mandatory": True,
+            "locations": locations,
+        })
+    return parsed, specs
+
+
+def evaluate_candidate_against_specs(
+    candidate: Candidate,
+    jd_specs: List[Dict[str, Any]],
+    target_jd: Optional[JobRequirement] = None,
+    raw_resume_text: str = "",
+    unknown_if_absent: bool = False,
+) -> Dict[str, Any]:
     """
     Deterministically audits a candidate against the 16 JD specifications.
     Uses real resume text and extracted skills, never fabricating citations.
     """
     cand_skills_str = (candidate.skills or "").lower()
-    raw_resume_text = ""
-    summary_text = f"{candidate.current_title or 'Professional'} with {candidate.total_experience_years or 0} years of experience in enterprise systems."
+    raw_resume_text = raw_resume_text.lower()
+    experience = candidate.total_experience_years
+    cand_exp_val = float(experience) if experience is not None else None
+    summary_text = (
+        f"{candidate.current_title} with {cand_exp_val:g} years of experience."
+        if candidate.current_title and cand_exp_val is not None
+        else candidate.current_title or "No summary was extracted from the resume."
+    )
 
     skills_list = [s.strip() for s in (candidate.skills or "").split(",") if s.strip()]
-    if not skills_list and profile and profile.technical_skills:
-        skills_list = profile.technical_skills[:12]
+    if not skills_list and hasattr(candidate, "profile") and candidate.profile:
+        skills_list = getattr(candidate.profile, "technical_skills", [])[:12]
 
     grounded_specs = []
     satisfied_count = 0
     mandatory_count = 0
     mandatory_satisfied = 0
+    known_count = 0
+    known_mandatory_count = 0
 
     for spec in jd_specs:
         is_mand = spec.get("is_mandatory", True)
@@ -160,12 +354,16 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
 
         is_satisfied = False
         citation = ""
+        spec_status = "gap"
 
         # Check Experience requirement
         if "min_exp" in spec:
-            cand_exp = float(candidate.total_experience_years or 0.0)
+            cand_exp = cand_exp_val
             req_exp = float(spec["min_exp"])
-            if cand_exp >= req_exp:
+            if cand_exp is None and unknown_if_absent:
+                spec_status = "not_mentioned"
+                citation = "Experience duration is not stated in the supplied resume text."
+            elif (cand_exp or 0) >= req_exp:
                 is_satisfied = True
                 citation = f"Candidate has {cand_exp} years documented experience (meets {req_exp}+ years requirement)."
             else:
@@ -174,7 +372,10 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
         # Check Location requirement
         elif "locations" in spec:
             cand_loc = (candidate.location or "").lower()
-            if any(loc in cand_loc for loc in spec["locations"]) or "remote" in cand_loc or not candidate.location:
+            if not candidate.location and unknown_if_absent:
+                spec_status = "not_mentioned"
+                citation = "Location is not stated in the supplied resume text."
+            elif any(loc in cand_loc for loc in spec["locations"]) or "remote" in cand_loc or not candidate.location:
                 is_satisfied = True
                 citation = f"Location '{candidate.location or 'Flexible'}' aligns with required locations / remote options."
             else:
@@ -194,27 +395,34 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
                 citation = f"VERBATIM RESUME CITATION: Candidate profile lists skill or project evidence for '{matched_kw}'."
             else:
                 citation = "No explicit verifiable evidence found in candidate document."
+                if unknown_if_absent:
+                    spec_status = "not_mentioned"
 
         if is_satisfied:
             satisfied_count += 1
+            spec_status = "satisfied"
             if is_mand:
                 mandatory_satisfied += 1
+        if spec_status != "not_mentioned":
+            known_count += 1
+            if is_mand:
+                known_mandatory_count += 1
 
         grounded_specs.append({
             "id": spec.get("id"),
             "category": spec.get("category", "Mandatory Skills"),
             "title": spec.get("title"),
             "is_mandatory": is_mand,
-            "status": "satisfied" if is_satisfied else "gap",
+            "status": spec_status,
             "citation": citation,
         })
 
     # Overall Match Score calculation
     # Weights: Mandatory 65%, Experience 20%, Preferred 15%
-    cand_exp_val = float(candidate.total_experience_years or 0)
-    mand_ratio = (mandatory_satisfied / mandatory_count) if mandatory_count else 0.5
-    exp_ratio = min(1.0, cand_exp_val / 5.0)
-    score_pct = int(round((mand_ratio * 65.0) + (exp_ratio * 25.0) + ((satisfied_count / len(jd_specs)) * 10.0)))
+    mand_ratio = (mandatory_satisfied / known_mandatory_count) if known_mandatory_count else 0.5
+    exp_ratio = min(1.0, cand_exp_val / 5.0) if cand_exp_val is not None else 0.5
+    known_ratio = (satisfied_count / known_count) if known_count else 0.5
+    score_pct = int(round((mand_ratio * 65.0) + (exp_ratio * 25.0) + (known_ratio * 10.0)))
     score_pct = max(10, min(95, score_pct))
 
     # Segment classification
@@ -231,16 +439,24 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
         segment = "Partial Match"
         status_badge = "Partial Match"
 
-    # Identify matched vs missing vs adjacent skills
-    mandatory_keywords = ["calculation scripts", "hyperion", "essbase", "pbcs", "oracle epm"]
+    # Identify matched vs missing vs adjacent skills dynamically from target JD
+    mandatory_keywords = []
+    if target_jd and (target_jd.required_skills or target_jd.primary_skills or (target_jd.title and not unknown_if_absent)):
+        raw_kws = target_jd.required_skills or target_jd.primary_skills or target_jd.title
+        if isinstance(raw_kws, list):
+            mandatory_keywords = [s.strip().lower() for s in raw_kws if len(s.strip()) > 1][:5]
+        else:
+            mandatory_keywords = [s.strip().lower() for s in str(raw_kws).split(",") if len(s.strip()) > 1][:5]
+    if not mandatory_keywords and not unknown_if_absent:
+        mandatory_keywords = ["calculation scripts", "hyperion", "essbase", "pbcs", "oracle epm"]
     matched_core = []
     missing_gaps = []
     adjacent = []
 
     for kw in mandatory_keywords:
-        if kw in cand_skills_str:
+        if kw in cand_skills_str or (raw_resume_text and kw in raw_resume_text):
             matched_core.append(kw.title())
-        else:
+        elif not unknown_if_absent:
             missing_gaps.append(kw.title())
 
     for s in skills_list[:9]:
@@ -248,37 +464,39 @@ def evaluate_candidate_against_specs(candidate: Candidate, jd_specs: List[Dict[s
             adjacent.append(s)
 
     cand_name = candidate.full_name or f"{candidate.first_name or ''} {candidate.last_name or ''}".strip() or "Candidate"
+    not_mentioned_count = sum(s["status"] == "not_mentioned" for s in grounded_specs)
     recruiter_brief = (
         f"{cand_name} is classified as '{segment}' with an overall match score of {score_pct}%. "
-        f"Candidate covers {mandatory_satisfied} of {mandatory_count} mandatory skills with "
-        f"{cand_exp_val} years industry experience."
+        f"Evidence confirms {mandatory_satisfied} of {known_mandatory_count} evaluated mandatory requirements; "
+        f"{not_mentioned_count} requirements were not mentioned."
     )
+    experience_requirement = next((s.get("min_exp") for s in jd_specs if s.get("min_exp") is not None), None)
 
     return {
         "candidate_id": candidate.id,
-        "candidate_code": candidate.candidate_code or f"cand-{candidate.id:03d}",
+        "candidate_code": getattr(candidate, "candidate_code", None) or (f"cand-{candidate.id:03d}" if candidate.id else None),
         "candidate_name": cand_name,
-        "current_title": candidate.current_title or "Enterprise Software Consultant",
-        "current_company": candidate.current_company or "Enterprise Services",
+        "current_title": candidate.current_title,
+        "current_company": candidate.current_company,
         "total_experience_years": cand_exp_val,
-        "location": candidate.location or "Bangalore, India",
-        "availability": "Immediate",
+        "location": candidate.location,
+        "availability": None,
         "overall_score": score_pct,
         "segment": segment,
         "status_badge": status_badge,
-        "has_critical_gaps": (mandatory_count - mandatory_satisfied) > 0,
-        "critical_gaps_count": max(0, mandatory_count - mandatory_satisfied),
+        "has_critical_gaps": any(s["status"] == "gap" and s["is_mandatory"] for s in grounded_specs),
+        "critical_gaps_count": sum(s["status"] == "gap" and s["is_mandatory"] for s in grounded_specs),
         "recruiter_brief": recruiter_brief,
         "professional_summary": summary_text,
-        "discovered_skills": skills_list if skills_list else ["Oracle FCCS", "Hyperion Financial Management", "Financial Consolidation", "Smart View", "EPM Automate", "Business Rules", "Data Management", "SQL", "Hyperion"],
+        "discovered_skills": skills_list,
         "metrics": {
-            "mandatory_stack_fit": f"{int((mandatory_satisfied / mandatory_count) * 100) if mandatory_count else 0}%",
-            "mandatory_fraction": f"{mandatory_satisfied} / {mandatory_count}",
-            "semantic_cosine_fit": f"{int(score_pct * 0.85)}%",
-            "experience_alignment": f"{cand_exp_val} yrs",
-            "experience_req": "Req: 5-8 yrs",
-            "location_compatibility": "Compatible" if ("bangalore" in (candidate.location or "").lower() or "hyderabad" in (candidate.location or "").lower() or "remote" in (candidate.location or "").lower()) else "Relocation Needed",
-            "location_text": candidate.location or "Bangalore, India",
+            "mandatory_stack_fit": f"{int((mandatory_satisfied / known_mandatory_count) * 100) if known_mandatory_count else 0}%",
+            "mandatory_fraction": f"{mandatory_satisfied} / {known_mandatory_count} evaluated",
+            "semantic_cosine_fit": None,
+            "experience_alignment": f"{cand_exp_val:g} yrs" if cand_exp_val is not None else "Not mentioned",
+            "experience_req": f"Req: {experience_requirement:g}+ yrs" if experience_requirement is not None else "Not specified",
+            "location_compatibility": "Unknown" if not candidate.location else "Compatible" if target_jd and target_jd.location and target_jd.location.lower() in candidate.location.lower() else "Review",
+            "location_text": candidate.location,
         },
         "skills_alignment": {
             "matched_core_skills": matched_core,
@@ -382,24 +600,69 @@ def analyze_comparison(
     resume_text = payload.get("resume_text")
     mode = payload.get("mode", "single")  # 'single', 'multi', 'text'
 
-    # 1. Resolve JD
-    target_jd = None
-    if jd_id:
-        target_jd = db.query(JobRequirement).filter(JobRequirement.id == jd_id).first()
-    if not target_jd:
-        target_jd = db.query(JobRequirement).first()
+    # Pasted text comparison is local and independent of saved database records.
+    text_candidate = None
+    parsed_jd = None
+    if mode == "text":
+        if not isinstance(jd_text, str) or not jd_text.strip() or not isinstance(resume_text, str) or not resume_text.strip():
+            raise HTTPException(status_code=422, detail="Paste both the job description and resume text before comparing.")
+        parsed_jd, active_specs = build_text_jd_specs(jd_text)
+        if not active_specs:
+            raise HTTPException(status_code=422, detail="No explicit skills, experience, or location requirements were found in the pasted job description.")
+        parsed_resume = ResumeParser.parse(resume_text)
+        text_candidate = SimpleNamespace(
+            id=None,
+            candidate_code=None,
+            first_name=parsed_resume.get("first_name") or "",
+            last_name=parsed_resume.get("last_name") or "",
+            full_name=parsed_resume.get("full_name") or "",
+            current_title=parsed_resume.get("current_title"),
+            current_company=parsed_resume.get("current_company"),
+            total_experience_years=parsed_resume.get("total_experience_years"),
+            location=parsed_resume.get("location"),
+            skills=parsed_resume.get("skills") or "",
+            profile=None,
+        )
+        target_jd = SimpleNamespace(
+            id=None,
+            req_code="PASTED",
+            title=parsed_jd.get("job_title") or "Pasted job description",
+            department=None,
+            location=parsed_jd.get("location"),
+            experience_level=parsed_jd.get("min_experience_years"),
+            required_skills=", ".join(parsed_jd.get("required_skills_list") or []),
+            primary_skills=None,
+            secondary_skills=", ".join(parsed_jd.get("preferred_skills_list") or []),
+            description=jd_text,
+        )
+    else:
+        target_jd = db.query(JobRequirement).filter(JobRequirement.id == jd_id).first() if jd_id else None
+        if not target_jd:
+            raise HTTPException(status_code=404, detail="Select an existing job requisition for comparison.")
+        active_specs = build_dynamic_jd_specs(target_jd, jd_text)
+
+    mand_list = [s.strip() for s in str(getattr(target_jd, 'required_skills', '') or getattr(target_jd, 'primary_skills', '') or '').split(',') if s.strip()][:4]
+    pref_list = [s.strip() for s in str(getattr(target_jd, 'secondary_skills', '') or '').split(',') if s.strip()][:4]
+    if not pref_list:
+        full_skills = [s.strip() for s in str(getattr(target_jd, 'required_skills', '')).split(',') if s.strip()]
+        if len(full_skills) > 4:
+            pref_list = full_skills[4:8]
+    exp_disp = (
+        f"{parsed_jd['min_experience_years']:g}+ years" if mode == "text" and parsed_jd.get("min_experience_years") is not None
+        else f"{target_jd.experience_level.title() if target_jd and target_jd.experience_level else '5 - 8'} Years"
+    )
 
     jd_info = {
-        "id": target_jd.id if target_jd else 1,
-        "req_code": target_jd.req_code if target_jd else "JD-001",
-        "title": target_jd.title if target_jd else "Oracle EPM / Hyperion Planning Consultant",
-        "department": target_jd.department if target_jd else "Engineering & Delivery",
-        "location": target_jd.location if target_jd else "Hyderabad / Remote",
-        "experience": "5 - 8 Years",
-        "overview": (target_jd.description or "")[:350] if target_jd else "Lead Oracle EPM specialist responsible for architecting, configuring, and supporting PBCS and Hyperion applications.",
-        "mandatory_skills": ["Calculation Scripts"],
-        "preferred_skills": ["Dimension Hierarchies", "Intercompany Eliminations", "Currency Translation", "Close Process Automation"],
-        "total_specs_count": len(DEFAULT_JD_SPECS),
+        "id": target_jd.id,
+        "req_code": target_jd.req_code,
+        "title": target_jd.title,
+        "department": target_jd.department,
+        "location": target_jd.location,
+        "experience": exp_disp,
+        "overview": (target_jd.description or "")[:350],
+        "mandatory_skills": mand_list,
+        "preferred_skills": pref_list,
+        "total_specs_count": len(active_specs),
     }
 
     # If raw JD text was passed, incorporate it
@@ -407,28 +670,35 @@ def analyze_comparison(
         jd_info["overview"] = jd_text[:350]
 
     # 2. Resolve Candidate(s)
+    if mode == "text":
+        evaluated = evaluate_candidate_against_specs(
+            text_candidate,
+            active_specs,
+            target_jd,
+            raw_resume_text=resume_text,
+            unknown_if_absent=True,
+        )
+        evaluated["professional_summary"] = resume_text[:300]
+        return {"mode": "text", "jd": jd_info, "comparison": evaluated}
+
     if mode == "multi" or len(candidate_ids) > 1:
         # Multi-Candidate comparison (3 candidates)
         ids_to_fetch = candidate_ids[:3] if candidate_ids else []
-        if len(ids_to_fetch) < 3:
-            # Pick top candidates from DB
-            available = db.query(Candidate).limit(6).all()
-            for cand in available:
-                if cand.id not in ids_to_fetch:
-                    ids_to_fetch.append(cand.id)
-                if len(ids_to_fetch) >= 3:
-                    break
+        if not ids_to_fetch:
+            raise HTTPException(status_code=422, detail="Select at least one candidate for comparison.")
 
         cands = db.query(Candidate).filter(Candidate.id.in_(ids_to_fetch)).all()
+        if not cands:
+            raise HTTPException(status_code=404, detail="No selected candidates were found.")
         cands.sort(key=lambda c: ids_to_fetch.index(c.id) if c.id in ids_to_fetch else 999)
         multi_results = []
         for c in cands:
-            evaluated = evaluate_candidate_against_specs(c, DEFAULT_JD_SPECS)
+            evaluated = evaluate_candidate_against_specs(c, active_specs, target_jd)
             multi_results.append(evaluated)
 
         # Build 16-row alignment matrix table
         matrix_rows = []
-        for spec in DEFAULT_JD_SPECS:
+        for spec in active_specs:
             spec_title = spec["title"]
             spec_category = spec.get("category", "Mandatory Skills")
             is_mand = spec.get("is_mandatory", True)
@@ -463,23 +733,9 @@ def analyze_comparison(
         if candidate_id:
             target_cand = db.query(Candidate).filter(Candidate.id == candidate_id).first()
         if not target_cand:
-            # Prefer Lavanya or Abhijeet or first candidate
-            target_cand = (
-                db.query(Candidate)
-                .filter(or_(Candidate.first_name.ilike("%lavanya%"), Candidate.last_name.ilike("%gudibanda%"), Candidate.skills.ilike("%epm%")))
-                .first()
-            )
-            if not target_cand:
-                target_cand = db.query(Candidate).first()
+            raise HTTPException(status_code=404, detail="Select an existing candidate for comparison.")
 
-        if not target_cand:
-            raise HTTPException(status_code=404, detail="No candidates found in database for comparison.")
-
-        evaluated = evaluate_candidate_against_specs(target_cand, DEFAULT_JD_SPECS)
-
-        # If custom resume text passed, override
-        if resume_text:
-            evaluated["professional_summary"] = resume_text[:300]
+        evaluated = evaluate_candidate_against_specs(target_cand, active_specs, target_jd)
 
         return {
             "mode": "single",

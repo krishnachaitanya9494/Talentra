@@ -15,10 +15,13 @@ import {
   SlidersHorizontal,
   X,
   UserCheck,
+  Upload,
+  Files,
 } from 'lucide-react';
 import apiClient from '../../services/api';
+import { UploadResumeModal } from './UploadResumeModal';
 
-export const CandidateDirectory = ({ onInspectCandidate, onAssignCandidates }) => {
+export const CandidateDirectory = ({ onInspectCandidate, onAssignCandidates, onUploadComplete }) => {
   const [candidates, setCandidates] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -34,6 +37,8 @@ export const CandidateDirectory = ({ onInspectCandidate, onAssignCandidates }) =
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [resumeUploadMode, setResumeUploadMode] = useState('single');
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const fetchCandidates = useCallback(async () => {
     try {
@@ -121,7 +126,29 @@ export const CandidateDirectory = ({ onInspectCandidate, onAssignCandidates }) =
           </div>
 
           {/* Quick Filter Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setResumeUploadMode('single');
+                setUploadModalOpen(true);
+              }}
+              className="inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Upload resume</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setResumeUploadMode('bulk');
+                setUploadModalOpen(true);
+              }}
+              className="inline-flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Files className="w-3.5 h-3.5" />
+              <span>Bulk add resumes</span>
+            </button>
             <button
               type="button"
               onClick={() => setFiltersOpen(!filtersOpen)}
@@ -453,6 +480,16 @@ export const CandidateDirectory = ({ onInspectCandidate, onAssignCandidates }) =
           </div>
         )}
       </div>
+
+      <UploadResumeModal
+        isOpen={uploadModalOpen}
+        mode={resumeUploadMode}
+        onClose={() => setUploadModalOpen(false)}
+        onSuccess={() => {
+          fetchCandidates();
+          onUploadComplete?.();
+        }}
+      />
     </div>
   );
 };

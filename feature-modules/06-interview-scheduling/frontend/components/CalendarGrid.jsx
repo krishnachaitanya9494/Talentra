@@ -78,7 +78,7 @@ export const CalendarGrid = ({
                   {/* Interviewer Identity */}
                   <div className="flex items-start gap-2.5 min-w-0">
                     <div className="relative shrink-0 mt-0.5">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#4F46B8] to-[#3157D5] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                      <div className="w-9 h-9 rounded-lg bg-brand-700 text-white font-semibold text-xs flex items-center justify-center">
                         {(inv.full_name || 'Evaluator')
                           .split(' ')
                           .map((n) => n[0])
@@ -97,7 +97,7 @@ export const CalendarGrid = ({
                       {inv.specialization && (
                         <div
                           title={`Technical Specialization: ${inv.specialization}`}
-                          className="mt-0.5 text-[9px] font-bold text-[#4F46B8] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded-md border border-purple-200/80 dark:border-purple-800/80 truncate inline-block max-w-full"
+                          className="mt-0.5 text-[9px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/40 px-1.5 py-0.5 rounded-md border border-brand-200 dark:border-brand-800 truncate inline-block max-w-full"
                         >
                           {inv.specialization}
                         </div>
@@ -108,7 +108,7 @@ export const CalendarGrid = ({
                   {/* Scheduled Sessions Counter */}
                   <div className="mt-2.5 pt-2 border-t border-[#D9DEE8]/60 dark:border-slate-800 flex items-center justify-between text-[10px]">
                     <span className="px-2 py-0.5 rounded-lg font-mono font-bold border bg-[#F8FAFC] dark:bg-slate-800 text-[#475569] dark:text-slate-300 border-[#D9DEE8] dark:border-slate-700 flex items-center gap-1.5 shadow-2xs">
-                      <Calendar className="w-3 h-3 text-[#4F46B8]" />
+                      <Calendar className="w-3 h-3 text-brand-700 dark:text-brand-300" />
                       <span>{scheduledCount} Session{scheduledCount === 1 ? '' : 's'}</span>
                     </span>
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
@@ -188,11 +188,11 @@ export const CalendarGrid = ({
                     <div
                       key={`slot-${hObj.raw}`}
                       onClick={() => onSlotClick(inv.id, hObj.raw)}
-                      className="absolute left-0 right-0 hover:bg-[#4F46B8]/5 dark:hover:bg-[#4F46B8]/10 cursor-pointer transition flex items-center justify-center group/slot z-[1]"
+                      className="absolute left-0 right-0 hover:bg-brand-700/5 dark:hover:bg-brand-300/10 cursor-pointer transition-colors flex items-center justify-center group/slot z-[1]"
                       style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
                     >
-                      <span className="opacity-0 group-hover/slot:opacity-100 text-[10px] text-[#4F46B8] dark:text-purple-300 font-bold flex items-center gap-1 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg shadow-sm border border-purple-300 dark:border-purple-700 transition">
-                        <Plus className="w-3 h-3 text-[#4F46B8] dark:text-purple-400" /> Book {hObj.raw}
+                      <span className="opacity-0 group-hover/slot:opacity-100 text-[10px] text-brand-700 dark:text-brand-300 font-semibold flex items-center gap-1 bg-white dark:bg-surface-darkHover px-2.5 py-1 rounded-lg border border-brand-200 dark:border-brand-800 transition-opacity">
+                        <Plus className="w-3 h-3 text-brand-700 dark:text-brand-300" /> Book {hObj.raw}
                       </span>
                     </div>
                   ))}
@@ -241,7 +241,7 @@ export const CalendarGrid = ({
                           colors.cardBg
                         } ${
                           isSelected
-                            ? 'ring-2 ring-white ring-offset-2 ring-offset-[#4F46B8] shadow-lg scale-[1.01]'
+                            ? 'ring-2 ring-white ring-offset-2 ring-offset-brand-700 shadow-lg scale-[1.01]'
                             : ''
                         }`}
                         style={{

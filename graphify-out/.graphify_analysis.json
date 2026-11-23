@@ -1,0 +1,558 @@
+{
+  "communities": {
+    "0": [
+      "test_driven_development_skill",
+      "test_driven_development_skill_iron_law",
+      "test_driven_development_skill_rationalization_table",
+      "test_driven_development_skill_red_green_refactor",
+      "test_driven_development_writing_good_tests",
+      "test_driven_development_writing_good_tests_exercise_real_thing",
+      "test_driven_development_writing_good_tests_name_the_break",
+      "verification_before_completion_skill",
+      "verification_before_completion_skill_gate_function",
+      "verification_before_completion_skill_iron_law",
+      "writing_skills_references_anthropic_best_practices",
+      "writing_skills_references_anthropic_best_practices_concise_is_key",
+      "writing_skills_references_anthropic_best_practices_degrees_of_freedom",
+      "writing_skills_references_anthropic_best_practices_progressive_disclosure",
+      "writing_skills_references_bulletproofing",
+      "writing_skills_references_bulletproofing_loophole_closing",
+      "writing_skills_references_claude_md_testing",
+      "writing_skills_references_claude_md_testing_blind_pressure_testing",
+      "writing_skills_references_discovery",
+      "writing_skills_references_discovery_triggering_optimization",
+      "writing_skills_references_flowcharts",
+      "writing_skills_references_flowcharts_decision_visualization",
+      "writing_skills_references_persuasion_principles",
+      "writing_skills_references_persuasion_principles_psychological_triggers",
+      "writing_skills_references_testing_skills_with_subagents",
+      "writing_skills_references_testing_skills_with_subagents_eval_loop",
+      "writing_skills_skill",
+      "writing_skills_skill_skill_anatomy",
+      "writing_skills_skill_skill_types",
+      "writing_skills_skill_tdd_mapping"
+    ],
+    "1": [
+      "executing_plans_skill_completion_contract",
+      "executing_plans_skill_executing_plans",
+      "executing_plans_skill_progress_ledger",
+      "executing_plans_skill_rulings_not_stalls",
+      "finishing_a_development_branch_skill_branch_integration_options",
+      "finishing_a_development_branch_skill_finishing_a_development_branch",
+      "finishing_a_development_branch_skill_worktree_cleanup",
+      "receiving_code_review_skill_receiving_code_review",
+      "receiving_code_review_skill_technical_verification_over_agreement",
+      "receiving_code_review_skill_yagni_check",
+      "requesting_code_review_code_reviewer_spec_as_vision",
+      "requesting_code_review_code_reviewer_template",
+      "requesting_code_review_skill_requesting_code_review",
+      "subagent_driven_development_implementer_prompt_no_subagents_contract",
+      "subagent_driven_development_implementer_prompt_template",
+      "subagent_driven_development_re_review_prompt_template",
+      "subagent_driven_development_references_batching_batch_small_work",
+      "subagent_driven_development_references_cannot_verify_handling",
+      "subagent_driven_development_references_final_review_final_review_and_finish",
+      "subagent_driven_development_references_fix_loop_circuit_breaker",
+      "subagent_driven_development_references_fix_loop_fix_loop",
+      "subagent_driven_development_references_handling_reports_handling_reports",
+      "subagent_driven_development_references_preflight_preflight_scan",
+      "subagent_driven_development_references_resuming_resuming_from_ledger",
+      "subagent_driven_development_skill_continuous_execution",
+      "subagent_driven_development_skill_model_selection",
+      "subagent_driven_development_skill_subagent_driven_development",
+      "subagent_driven_development_task_reviewer_prompt_template"
+    ],
+    "2": [
+      "brainstorming_scripts_server",
+      "brainstorming_scripts_server_clients",
+      "brainstorming_scripts_server_content_dir",
+      "brainstorming_scripts_server_crypto",
+      "brainstorming_scripts_server_debouncetimers",
+      "brainstorming_scripts_server_frametemplate",
+      "brainstorming_scripts_server_fs",
+      "brainstorming_scripts_server_helperscript",
+      "brainstorming_scripts_server_http",
+      "brainstorming_scripts_server_idle_timeout_ms",
+      "brainstorming_scripts_server_istruthyenv",
+      "brainstorming_scripts_server_lastactivity",
+      "brainstorming_scripts_server_lifecycle_check_ms",
+      "brainstorming_scripts_server_mime_types",
+      "brainstorming_scripts_server_opcodes",
+      "brainstorming_scripts_server_path",
+      "brainstorming_scripts_server_port",
+      "brainstorming_scripts_server_readsuperpowersversion",
+      "brainstorming_scripts_server_state_dir",
+      "brainstorming_scripts_server_superpowers_telemetry_disabled",
+      "brainstorming_scripts_server_superpowers_version",
+      "brainstorming_scripts_server_telemetry_disable_env_vars",
+      "brainstorming_scripts_server_tokeninfo",
+      "docref_rfc_6455",
+      "ref_crypto",
+      "ref_http"
+    ],
+    "3": [
+      "diagnosing_superpowers_prompts_analyst_common",
+      "diagnosing_superpowers_prompts_cost_and_time",
+      "diagnosing_superpowers_prompts_plan_adherence",
+      "diagnosing_superpowers_prompts_quality_evidence",
+      "diagnosing_superpowers_prompts_repeated_work",
+      "diagnosing_superpowers_prompts_request_conflicts",
+      "diagnosing_superpowers_prompts_scrub",
+      "diagnosing_superpowers_prompts_scrub_audit",
+      "diagnosing_superpowers_prompts_similar_session",
+      "diagnosing_superpowers_prompts_skill_timeline",
+      "diagnosing_superpowers_prompts_stumbles",
+      "diagnosing_superpowers_references_context_safety",
+      "diagnosing_superpowers_references_github_issues",
+      "diagnosing_superpowers_references_redaction_policy",
+      "diagnosing_superpowers_references_session_discovery",
+      "diagnosing_superpowers_skill",
+      "diagnosing_superpowers_skill_evidence_rule",
+      "diagnosing_superpowers_templates_bundle_readme",
+      "diagnosing_superpowers_templates_case"
+    ],
+    "4": [
+      "brainstorming_scripts_server_browserlauncherforplatform",
+      "brainstorming_scripts_server_chmodowneronly",
+      "brainstorming_scripts_server_companionurl",
+      "brainstorming_scripts_server_generatetoken",
+      "brainstorming_scripts_server_initialtoken",
+      "brainstorming_scripts_server_maybeopenbrowser",
+      "brainstorming_scripts_server_preferredport",
+      "brainstorming_scripts_server_randomport",
+      "brainstorming_scripts_server_startserver",
+      "brainstorming_scripts_server_startserver_onlisten",
+      "brainstorming_scripts_server_startserver_owneralive",
+      "brainstorming_scripts_server_startserver_shutdown",
+      "brainstorming_scripts_server_urlhostforhttp",
+      "ref_child_process"
+    ],
+    "5": [
+      "brainstorming_scripts_server_bootstrappage",
+      "brainstorming_scripts_server_getnewestscreen",
+      "brainstorming_scripts_server_handlerequest",
+      "brainstorming_scripts_server_isauthorized",
+      "brainstorming_scripts_server_isfulldocument",
+      "brainstorming_scripts_server_isregularfileinsidecontentdir",
+      "brainstorming_scripts_server_parsecookies",
+      "brainstorming_scripts_server_pathnameof",
+      "brainstorming_scripts_server_querykey",
+      "brainstorming_scripts_server_securityheaders",
+      "brainstorming_scripts_server_timingsafeequalstr"
+    ],
+    "6": [
+      "using_superpowers_references_antigravity_tools",
+      "using_superpowers_references_claude_code_tools",
+      "using_superpowers_references_codex_tools",
+      "using_superpowers_references_gemini_tools",
+      "using_superpowers_references_hermes_tools",
+      "using_superpowers_references_muse_tools",
+      "using_superpowers_references_pi_tools",
+      "using_superpowers_references_platform_adapter",
+      "using_superpowers_skill",
+      "using_superpowers_skill_priority_order",
+      "using_superpowers_skill_the_rule"
+    ],
+    "7": [
+      "brainstorming_scripts_helper",
+      "brainstorming_scripts_helper_connect",
+      "brainstorming_scripts_helper_nextreconnectdelay",
+      "brainstorming_scripts_helper_reloadafterrecovery",
+      "brainstorming_scripts_helper_sendevent",
+      "brainstorming_scripts_helper_sessionkey",
+      "brainstorming_scripts_helper_setstatus",
+      "brainstorming_scripts_helper_showtombstone",
+      "brainstorming_scripts_helper_websocketurl"
+    ],
+    "8": [
+      "brainstorming_builder_check_prompt",
+      "brainstorming_builder_check_prompt_subagent",
+      "brainstorming_scripts_frame_template",
+      "brainstorming_skill",
+      "brainstorming_skill_builder_check",
+      "brainstorming_skill_hard_gate",
+      "brainstorming_visual_companion",
+      "diagnosing_superpowers_skill_triage"
+    ],
+    "9": [
+      "brainstorming_scripts_server_broadcast",
+      "brainstorming_scripts_server_computeacceptkey",
+      "brainstorming_scripts_server_decodeframe",
+      "brainstorming_scripts_server_encodeframe",
+      "brainstorming_scripts_server_handlemessage",
+      "brainstorming_scripts_server_handleupgrade",
+      "brainstorming_scripts_server_isallowedwebsocketorigin",
+      "brainstorming_scripts_server_touchactivity"
+    ],
+    "10": [
+      "ref_fs",
+      "ref_path",
+      "writing_skills_render_graphs",
+      "writing_skills_render_graphs_combinegraphs",
+      "writing_skills_render_graphs_extractdotblocks",
+      "writing_skills_render_graphs_extractgraphbody",
+      "writing_skills_render_graphs_main",
+      "writing_skills_render_graphs_rendertosvg"
+    ],
+    "11": [
+      "systematic_debugging_condition_based_waiting_condition_based_waiting",
+      "systematic_debugging_condition_based_waiting_wait_for_condition_not_time",
+      "systematic_debugging_defense_in_depth_defense_in_depth_validation",
+      "systematic_debugging_defense_in_depth_four_validation_layers",
+      "systematic_debugging_skill_four_phases",
+      "systematic_debugging_skill_iron_law",
+      "systematic_debugging_skill_question_architecture",
+      "systematic_debugging_skill_systematic_debugging"
+    ],
+    "12": [
+      "brainstorming_scripts_stop_server",
+      "brainstorming_scripts_stop_server_command_has_server_id",
+      "brainstorming_scripts_stop_server_command_line_for_pid",
+      "brainstorming_scripts_stop_server_is_brainstorm_server",
+      "brainstorming_scripts_stop_server_mark_stopped",
+      "brainstorming_scripts_stop_server_read_expected_server_id",
+      "brainstorming_scripts_stop_server_sh__entry"
+    ],
+    "13": [
+      "brainstorming_scripts_server_brandmarkup",
+      "brainstorming_scripts_server_escapehtmltext",
+      "brainstorming_scripts_server_renderbranding",
+      "brainstorming_scripts_server_waitingpage",
+      "brainstorming_scripts_server_wrapinframe"
+    ],
+    "14": [
+      "ref",
+      "systematic_debugging_condition_based_waiting_example",
+      "systematic_debugging_condition_based_waiting_example_waitforevent",
+      "systematic_debugging_condition_based_waiting_example_waitforeventcount",
+      "systematic_debugging_condition_based_waiting_example_waitforeventmatch"
+    ],
+    "15": [
+      "systematic_debugging_root_cause_tracing",
+      "systematic_debugging_root_cause_tracing_five_whys",
+      "systematic_debugging_root_cause_tracing_immediate_vs_root",
+      "systematic_debugging_root_cause_tracing_process"
+    ],
+    "16": [
+      "brainstorming_scripts_start_server",
+      "brainstorming_scripts_start_server_is_windows_like_shell",
+      "brainstorming_scripts_start_server_sh__entry"
+    ],
+    "17": [
+      "subagent_driven_development_scripts_sdd_workspace",
+      "subagent_driven_development_scripts_sdd_workspace__entry",
+      "subagent_driven_development_scripts_sdd_workspace_owns"
+    ],
+    "18": [
+      "using_git_worktrees_skill",
+      "using_git_worktrees_skill_isolation_detection",
+      "using_git_worktrees_skill_workspace_isolation"
+    ],
+    "19": [
+      "writing_plans_skill",
+      "writing_plans_skill_plan_structure",
+      "writing_plans_skill_task_right_sizing"
+    ],
+    "20": [
+      "brainstorming_scripts_frame_template_companion_frame",
+      "brainstorming_visual_companion_fragments"
+    ],
+    "21": [
+      "diagnosing_superpowers_prompts_scrub_audit_role",
+      "diagnosing_superpowers_prompts_scrub_role"
+    ],
+    "22": [
+      "diagnosing_superpowers_templates_issue_template",
+      "diagnosing_superpowers_templates_report_template"
+    ],
+    "23": [
+      "dispatching_parallel_agents_skill_dispatching_parallel_agents",
+      "dispatching_parallel_agents_skill_independent_problem_domains"
+    ],
+    "24": [
+      "executing_plans_scripts_task_done",
+      "executing_plans_scripts_task_done__entry"
+    ],
+    "25": [
+      "executing_plans_scripts_task_start",
+      "executing_plans_scripts_task_start__entry"
+    ],
+    "26": [
+      "subagent_driven_development_scripts_review_package",
+      "subagent_driven_development_scripts_review_package__entry"
+    ],
+    "27": [
+      "subagent_driven_development_scripts_sdd_repo",
+      "subagent_driven_development_scripts_sdd_repo__entry"
+    ],
+    "28": [
+      "subagent_driven_development_scripts_task_brief",
+      "subagent_driven_development_scripts_task_brief__entry"
+    ],
+    "29": [
+      "systematic_debugging_find_polluter",
+      "systematic_debugging_find_polluter_sh__entry"
+    ],
+    "30": [
+      "brainstorming_skill_approaches"
+    ],
+    "31": [
+      "brainstorming_skill_spike"
+    ],
+    "32": [
+      "brainstorming_skill_visual_companion"
+    ],
+    "33": [
+      "brainstorming_visual_companion_events"
+    ],
+    "34": [
+      "brainstorming_visual_companion_server"
+    ],
+    "35": [
+      "diagnosing_superpowers_prompts_analyst_common_subagent"
+    ],
+    "36": [
+      "diagnosing_superpowers_prompts_cost_and_time_dimension"
+    ],
+    "37": [
+      "diagnosing_superpowers_prompts_plan_adherence_dimension"
+    ],
+    "38": [
+      "diagnosing_superpowers_prompts_quality_evidence_dimension"
+    ],
+    "39": [
+      "diagnosing_superpowers_prompts_repeated_work_dimension"
+    ],
+    "40": [
+      "diagnosing_superpowers_prompts_request_conflicts_dimension"
+    ],
+    "41": [
+      "diagnosing_superpowers_prompts_similar_session_matcher"
+    ],
+    "42": [
+      "diagnosing_superpowers_prompts_skill_timeline_dimension"
+    ],
+    "43": [
+      "diagnosing_superpowers_prompts_stumbles_dimension"
+    ],
+    "44": [
+      "diagnosing_superpowers_references_context_safety_rules"
+    ],
+    "45": [
+      "diagnosing_superpowers_references_github_issues_filing"
+    ],
+    "46": [
+      "diagnosing_superpowers_references_redaction_policy_categories"
+    ],
+    "47": [
+      "diagnosing_superpowers_references_session_discovery_procedure"
+    ],
+    "48": [
+      "diagnosing_superpowers_skill_problem_intake"
+    ],
+    "49": [
+      "diagnosing_superpowers_skill_workflow"
+    ],
+    "50": [
+      "diagnosing_superpowers_templates_bundle_readme_bundle"
+    ],
+    "51": [
+      "diagnosing_superpowers_templates_case_record"
+    ]
+  },
+  "cohesion": {
+    "0": 0.07586206896551724,
+    "1": 0.08465608465608465,
+    "2": 0.08,
+    "3": 0.17543859649122806,
+    "4": 0.16483516483516483,
+    "5": 0.21818181818181817,
+    "6": 0.2909090909090909,
+    "7": 0.4166666666666667,
+    "8": 0.25,
+    "9": 0.25,
+    "10": 0.39285714285714285,
+    "11": 0.25,
+    "12": 0.5238095238095238,
+    "13": 0.4,
+    "14": 0.4,
+    "15": 0.5,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 0.6666666666666666,
+    "19": 0.6666666666666666,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0
+  },
+  "gods": [
+    {
+      "id": "diagnosing_superpowers_skill",
+      "label": "Diagnosing Superpowers Skill",
+      "degree": 17
+    },
+    {
+      "id": "brainstorming_scripts_server_handlerequest",
+      "label": "handleRequest()",
+      "degree": 14
+    },
+    {
+      "id": "subagent_driven_development_skill_subagent_driven_development",
+      "label": "Subagent-Driven Development",
+      "degree": 14
+    },
+    {
+      "id": "brainstorming_scripts_server_startserver",
+      "label": "startServer()",
+      "degree": 11
+    },
+    {
+      "id": "writing_skills_skill",
+      "label": "Writing Skills Skill",
+      "degree": 10
+    },
+    {
+      "id": "diagnosing_superpowers_prompts_analyst_common",
+      "label": "Analyst Common Prompt",
+      "degree": 9
+    },
+    {
+      "id": "using_superpowers_skill",
+      "label": "Using Superpowers Skill",
+      "degree": 9
+    },
+    {
+      "id": "brainstorming_scripts_server_handleupgrade",
+      "label": "handleUpgrade()",
+      "degree": 8
+    },
+    {
+      "id": "executing_plans_skill_executing_plans",
+      "label": "Executing Plans Inline",
+      "degree": 7
+    },
+    {
+      "id": "using_superpowers_references_platform_adapter",
+      "label": "Agent Platform Tool Abstraction",
+      "degree": 7
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Builder Check Review",
+      "target": "Parallel Analyst Triage",
+      "source_files": [
+        "brainstorming/SKILL.md",
+        "diagnosing-superpowers/SKILL.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Subagent-Driven Development",
+      "target": "Executing Plans Inline",
+      "source_files": [
+        "subagent-driven-development/SKILL.md",
+        "executing-plans/SKILL.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Task Reviewer Prompt Template",
+      "target": "Code Reviewer Prompt Template",
+      "source_files": [
+        "subagent-driven-development/task-reviewer-prompt.md",
+        "requesting-code-review/code-reviewer.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "TDD Iron Law",
+      "target": "Verification Iron Law",
+      "source_files": [
+        "test-driven-development/SKILL.md",
+        "verification-before-completion/SKILL.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "Red-Green-Refactor Cycle",
+      "target": "Subagent Baseline-and-Skill Eval Loop",
+      "source_files": [
+        "test-driven-development/SKILL.md",
+        "writing-skills/references/testing-skills-with-subagents.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `Executing Plans Inline` connect `Community 1` to `Community 11`?",
+      "why": "High betweenness centrality (0.009) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `startServer()` (e.g. with `handleRequest()` and `handleUpgrade()`) actually correct?",
+      "why": "`startServer()` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `RFC-6455`, `Hard Gate Approval`, `Visual Companion Offer` to the rest of the system?",
+      "why": "55 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07586206896551724 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08465608465608465 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 2` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

@@ -41,87 +41,89 @@ export const EditJDModal = ({ isOpen, onClose, jd, onSaved }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-2xl rounded-2xl bg-white dark:bg-surface-darkCard border border-slate-200 dark:border-surface-darkBorder shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="w-full max-w-xl rounded-xl bg-white dark:bg-surface-darkCard border border-slate-200 dark:border-surface-darkBorder shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Edit3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+              <Edit3 className="w-3.5 h-3.5" />
+            </div>
             <div>
-              <h3 className="font-bold text-sm text-navy-900 dark:text-slate-100">
-                Edit Requisition Specifications — {jd.req_code || `REQ-${jd.id}`}
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                Edit Requisition — <span className="font-mono tabular-nums">{jd.req_code || `REQ-${jd.id}`}</span>
               </h3>
               <p className="text-[11px] text-slate-500">
-                Deterministic recruiter updates. Creates a new version audit snapshot.
+                Specification update creates a new version audit snapshot.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 overflow-y-auto space-y-3.5 text-xs">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+            <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300">
-                Job Title *
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                Job title *
               </label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300">
-                Department / Practice *
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                Department *
               </label>
               <input
                 type="text"
                 required
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300">
-                Location / Work Arrangement
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                Location
               </label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Hyderabad / Remote, Bangalore / Hybrid"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                placeholder="e.g. Hyderabad / Remote"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300">
-                Requisition Status
+              <label className="font-medium text-slate-700 dark:text-slate-300">
+                Requisition status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
               >
                 <option value="open">Open (Active)</option>
                 <option value="interviewing">Interviewing</option>
@@ -133,39 +135,39 @@ export const EditJDModal = ({ isOpen, onClose, jd, onSaved }) => {
           </div>
 
           <div className="space-y-1">
-            <label className="font-bold text-slate-700 dark:text-slate-300">
-              Technical Skills (Comma separated)
+            <label className="font-medium text-slate-700 dark:text-slate-300">
+              Technical skills (Comma separated)
             </label>
             <input
               type="text"
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g. Oracle PBCS, Hyperion, Essbase, Calculation Manager, Groovy"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              placeholder="e.g. Oracle PBCS, Hyperion, Essbase, Calculation Manager"
+              className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="font-bold text-slate-700 dark:text-slate-300">
-              Job Description & Scope
+            <label className="font-medium text-slate-700 dark:text-slate-300">
+              Job description & scope
             </label>
             <textarea
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono text-xs"
+              className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400 font-mono text-xs leading-relaxed"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="font-bold text-slate-700 dark:text-slate-300">
-              Audit Change Summary
+            <label className="font-medium text-slate-700 dark:text-slate-300">
+              Audit change summary
             </label>
             <input
               type="text"
               value={changeSummary}
               onChange={(e) => setChangeSummary(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200"
+              className="w-full px-3 py-1.5 rounded-lg border border-slate-200 dark:border-surface-darkBorder bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
           </div>
 
@@ -174,17 +176,17 @@ export const EditJDModal = ({ isOpen, onClose, jd, onSaved }) => {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50 font-semibold cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium cursor-pointer transition-colors duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-medium cursor-pointer shadow-2xs disabled:opacity-40 transition-colors duration-150"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{saving ? 'Saving Changes...' : 'Save Requisition'}</span>
+              <span>{saving ? 'Saving...' : 'Save Requisition'}</span>
             </button>
           </div>
         </form>

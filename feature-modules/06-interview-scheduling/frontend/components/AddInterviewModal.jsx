@@ -200,7 +200,7 @@ export const AddInterviewModal = ({
     const selectedJd = jds.find((j) => String(j.id) === String(jdId));
 
     const candName = selectedCand
-      ? `${selectedCand.first_name || ''} ${selectedCand.last_name || ''}`.trim() || selectedCand.name
+      ? (selectedCand.full_name || `${selectedCand.first_name || ''} ${selectedCand.last_name || ''}`.trim() || selectedCand.name)
       : undefined;
 
     const payload = {
@@ -309,11 +309,15 @@ export const AddInterviewModal = ({
                   required
                 >
                   <option value="">Select Candidate from Repository...</option>
-                  {candidates.map((cand) => (
-                    <option key={cand.id} value={cand.id}>
-                      {cand.first_name} {cand.last_name || ''} ({cand.current_title || 'Candidate'} — {cand.email || 'No email'})
-                    </option>
-                  ))}
+                  {candidates.map((cand) => {
+                    const cName = cand.full_name || `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Candidate';
+                    const cTitle = cand.current_title || cand.current_designation || 'Candidate';
+                    return (
+                      <option key={cand.id} value={cand.id}>
+                        {cName} ({cTitle} — {cand.email || 'No email'})
+                      </option>
+                    );
+                  })}
                 </select>
                 <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
               </div>
@@ -332,7 +336,7 @@ export const AddInterviewModal = ({
                   <option value="">Select Requisition...</option>
                   {jds.map((j) => (
                     <option key={j.id} value={j.id}>
-                      {j.title || j.job_title} ({j.client_name || 'Talentra'})
+                      {j.title || j.job_title || j.req_code} ({j.client_name || 'Talentra'})
                     </option>
                   ))}
                 </select>
@@ -482,7 +486,7 @@ export const AddInterviewModal = ({
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-[#4F46B8] text-white font-bold text-xs flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-brand-700 text-white font-semibold text-xs flex items-center justify-center shrink-0">
                         {initials}
                       </div>
                       <div className="min-w-0">
@@ -557,7 +561,7 @@ export const AddInterviewModal = ({
               type="button"
               onClick={handleSave}
               disabled={submitting || !candidateId || selectedInterviewerIds.length === 0}
-              className="px-5 py-2 text-xs font-bold text-white bg-[#22A06B] hover:bg-[#1B8055] active:bg-[#146040] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs hover:shadow transition flex items-center gap-2"
+              className="px-5 py-2 text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 active:bg-brand-900 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
             >
               {submitting ? 'Scheduling...' : 'Schedule Interview'}
             </button>

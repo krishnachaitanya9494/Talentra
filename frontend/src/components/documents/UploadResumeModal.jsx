@@ -13,7 +13,7 @@ import {
 import { Modal } from '../common/Modal';
 import { uploadSingleResume, bulkUploadResumes } from '../../services/api';
 
-export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
+export const UploadResumeModal = ({ isOpen, onClose, onSuccess, mode = 'auto' }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -39,7 +39,7 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
+      const filesArray = Array.from(e.target.files).slice(0, mode === 'single' ? 1 : undefined);
       setSelectedFiles(filesArray);
       setError(null);
     }
@@ -59,7 +59,7 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const filesArray = Array.from(e.dataTransfer.files);
+      const filesArray = Array.from(e.dataTransfer.files).slice(0, mode === 'single' ? 1 : undefined);
       setSelectedFiles(filesArray);
       setError(null);
     }
@@ -81,7 +81,7 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
       setError(null);
       setUploadProgress(0);
 
-      if (selectedFiles.length === 1) {
+      if (mode === 'single' || (mode === 'auto' && selectedFiles.length === 1)) {
         const res = await uploadSingleResume(selectedFiles[0]);
         setUploadResult({
           total_files: 1,
@@ -119,8 +119,12 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Upload Candidate Resumes"
-      subtitle="Upload individual resumes or bulk upload 200+ profiles (.pdf, .docx, .txt) to the repository"
+      title={mode === 'single' ? 'Upload Candidate Resume' : mode === 'bulk' ? 'Bulk Add Candidate Resumes' : 'Upload Candidate Resumes'}
+      subtitle={mode === 'single'
+        ? 'Add one resume to the candidate document repository (.pdf, .docx, .txt)'
+        : mode === 'bulk'
+          ? 'Add multiple resumes to the candidate document repository (.pdf, .docx, .txt)'
+          : 'Upload individual resumes or bulk upload profiles (.pdf, .docx, .txt) to the repository'}
       maxWidth="max-w-2xl"
     >
       <div className="p-6 space-y-5">
@@ -224,7 +228,7 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
               <input
                 ref={fileInputRef}
                 type="file"
-                multiple
+                multiple={mode !== 'single'}
                 accept=".txt,.pdf,.docx,.doc"
                 onChange={handleFileChange}
                 className="hidden"
@@ -241,10 +245,14 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
               <p className="text-sm font-semibold text-navy-900 dark:text-slate-100 text-center">
                 {selectedFiles.length > 0
                   ? `${selectedFiles.length} file(s) selected (${(totalBytes / (1024 * 1024)).toFixed(2)} MB)`
-                  : 'Drag & drop Candidate Resumes here, or click to browse'}
+                  : mode === 'single'
+                    ? 'Choose one candidate resume to upload'
+                    : 'Drag and drop candidate resumes here, or click to browse'}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center">
-                Supports single or bulk upload of 200+ resumes (PDF, DOCX, TXT up to 25MB each)
+                {mode === 'single'
+                  ? 'Supported formats: PDF, DOCX, TXT (up to 25 MB)'
+                  : 'Bulk upload PDF, DOCX, or TXT resumes (up to 25 MB each)'}
               </p>
             </div>
 
@@ -329,6 +337,8 @@ export const UploadResumeModal = ({ isOpen, onClose, onSuccess }) => {
                 <span>
                   {loading
                     ? 'Ingesting Documents...'
+                    : mode === 'bulk'
+                    ? `Bulk add ${selectedFiles.length} resumes`
                     : selectedFiles.length > 1
                     ? `Bulk Ingest ${selectedFiles.length} Resumes`
                     : 'Upload & Store Resume'}

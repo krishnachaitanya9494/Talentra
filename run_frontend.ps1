@@ -1,7 +1,7 @@
 # ==========================================
 # TALENTRA — Frontend Development Server Launcher
 # ==========================================
-Write-Host "Starting TALENTRA React + Vite Development Server..." -ForegroundColor Cyan
+Write-Host "Starting TALENTRA Next.js Development Server..." -ForegroundColor Cyan
 
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $FrontendDir = Join-Path $RootDir "frontend"
@@ -15,4 +15,4 @@ if (-not (Test-Path "node_modules")) {
 Write-Host "Frontend server launching at http://127.0.0.1:5173" -ForegroundColor Green
 Write-Host "Press Ctrl+C to terminate." -ForegroundColor DarkGray
 
-npm.cmd run dev -- --host 127.0.0.1
+npm.cmd run dev -- -p 5173 -H 127.0.0.1
